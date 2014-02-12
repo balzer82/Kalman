@@ -30,7 +30,7 @@ from scipy.stats import norm
 
 # Formal Definition:
 # 
-# $$x_{k+1} = F \cdot x_{k}$$
+# $$x_{k+1} = F \cdot x_{k} + B \cdot u$$
 # 
 # $$x_{k+1} = \begin{bmatrix}1 & 0 & \Delta t & 0 & \frac{1}{2}\Delta t^2 & 0 \\ 0 & 1 & 0 & \Delta t & 0 & \frac{1}{2}\Delta t^2 \\ 0 & 0 & 1 & 0 & \Delta t & 0 \\ 0 & 0 & 0 & 1 & 0 & \Delta t \\ 0 & 0 & 0 & 0 & 1 & 0  \\ 0 & 0 & 0 & 0 & 0 & 1\end{bmatrix} \cdot \begin{bmatrix} x \\ y \\ \dot x \\ \dot y \\ \ddot x \\ \ddot y\end{bmatrix}_{k}$$
 # 
@@ -46,7 +46,6 @@ from scipy.stats import norm
 
 x = np.matrix([[0.0, 0.0, 0.0, 0.0, 0.0, 0.0]]).T
 print(x, x.shape)
-n=x.size # States
 plt.scatter(x[0],x[1], s=100)
 plt.title('Initial Location')
 
@@ -170,17 +169,15 @@ plt.tight_layout()
 # 
 # $$Q = \begin{bmatrix}\sigma_{x}^2 & \sigma_{xy} & \sigma_{x \dot x} & \sigma_{x \dot y} & \sigma_{x \ddot x} & \sigma_{x \ddot y} \\ \sigma_{yx} & \sigma_{y}^2 & \sigma_{y \dot x} & \sigma_{y \dot y} & \sigma_{y \ddot x} & \sigma_{y \ddot y} \\ \sigma_{\dot x x} & \sigma_{\dot x y} & \sigma_{\dot x}^2 & \sigma_{\dot x \dot y} & \sigma_{\dot x \ddot x} & \sigma_{\dot x \ddot y} \\ \sigma_{\dot y x} & \sigma_{\dot y y} & \sigma_{\dot y \dot x} & \sigma_{\dot y}^2 & \sigma_{\dot y \ddot x} & \sigma_{\dot y \ddot y} \\ \sigma_{\ddot x x} & \sigma_{\ddot x y} & \sigma_{\ddot x \dot x} & \sigma_{\ddot x \dot y} & \sigma_{\ddot x}^2 & \sigma_{\ddot x \ddot y} \\ \sigma_{\ddot y x} & \sigma_{\ddot y y} & \sigma_{\ddot y \dot x} & \sigma_{\ddot y \dot y} & \sigma_{\ddot y \ddot x} & \sigma_{\ddot y}^2\end{bmatrix}$$
 # 
+# Referring to [Schubert, R., Adam, C., Obst, M., Mattern, N., Leonhardt, V., & Wanielik, G. (2011). Empirical evaluation of vehicular models for ego motion estimation. 2011 IEEE Intelligent Vehicles Symposium (IV), 534–539. doi:10.1109/IVS.2011.5940526], the standard deviation for acceleration process noise can be assumed with $8.8 \frac{m}{s^2}$.
+# 
 # To easily calcualte Q, one can ask the question: How the noise effects my state vector? For example, how the acceleration change the position over one timestep dt.
 # 
 # This leads to the equation $dx = \frac{1}{2}dt^2 \cdot a_n$ with $a_n$ as the noisy acceleration. The velocity is influenced with $d\dot x = dt \cdot a_n$ and the acceleration is influenced by the acceleration with factor $1.0$.
-# 
-# Now one can calculate Q with
-# 
-# $$Q = G\cdot G^T \cdot \sigma_a^2$$
 
 # <codecell>
 
-sa = 0.1
+sa = 0.5
 G = np.matrix([[1/2.0*dt**2],
                [1/2.0*dt**2],
                [dt],
@@ -226,7 +223,7 @@ plt.tight_layout()
 
 # <codecell>
 
-I = np.eye(n)
+I = np.eye(6)
 print(I, I.shape)
 
 # <headingcell level=2>
@@ -257,7 +254,6 @@ plt.step(range(m),my, label='$a_y$')
 plt.ylabel('Acceleration')
 plt.title('Measurements')
 plt.legend(loc='best',prop={'size':18})
-plt.savefig('Kalman-Filter-CA-Measurements.png', dpi=72, transparent=True, bbox_inches='tight')
 
 # <codecell>
 
@@ -293,7 +289,7 @@ Kddy=[]
 
 # <codecell>
 
-for n in range(m):
+for n in range(len(measurements[0])):
     
     # Measurement Update (Correction)
     # ===============================
@@ -303,7 +299,7 @@ for n in range(m):
 
     
     # Update the estimate via z
-    Z = measurements[:,n].reshape(H.shape[0],1)
+    Z = measurements[:,n].reshape(2,1)
     y = Z - (H*x)                            # Innovation or Residual
     x = x + (K*y)
     
@@ -390,9 +386,9 @@ plt.legend(loc='best',prop={'size':18})
 
 # <codecell>
 
-fig = plt.figure(figsize=(6, 6))
+fig = plt.figure(figsize=(5, 5))
 im = plt.imshow(P, interpolation="none")
-plt.title('Covariance Matrix $P$ (after %i Filter Steps)' % (m))
+plt.title('Covariance Matrix $P$')
 ylocs, ylabels = yticks()
 # set the locations of the yticks
 yticks(arange(7))
@@ -415,7 +411,6 @@ plt.colorbar(im, cax=cax)
 
 
 plt.tight_layout()
-plt.savefig('Kalman-Filter-CA-CovarianceMatrix.png', dpi=72, transparent=True, bbox_inches='tight')
 
 # <codecell>
 
@@ -446,7 +441,6 @@ plt.xlabel('Filter Step')
 plt.ylabel('')
 plt.legend(loc='best',prop={'size':22})
 plt.ylabel('Position')
-plt.savefig('Kalman-Filter-CA-StateEstimated.png', dpi=72, transparent=True, bbox_inches='tight')
 
 # <codecell>
 
@@ -460,7 +454,6 @@ plt.ylabel('Y')
 plt.title('Position')
 plt.legend(loc='best')
 axis('equal')
-plt.savefig('Kalman-Filter-CA-Position.png', dpi=72, transparent=True, bbox_inches='tight')
 
 # <headingcell level=1>
 
@@ -468,5 +461,4 @@ plt.savefig('Kalman-Filter-CA-Position.png', dpi=72, transparent=True, bbox_inch
 
 # <markdowncell>
 
-# As you can see, bad idea just to measure the acceleration and try to get the position. The errors integrating up, so your position estimation is drifting.
 
