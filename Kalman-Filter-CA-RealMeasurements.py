@@ -9,11 +9,11 @@ from scipy.stats import norm
 
 # <headingcell level=1>
 
-# Kalman Filter Implementation in Python
+# Kalman Filter Implementation for Constant Acceleration Model (CA) in Python
 
 # <markdowncell>
 
-# Situation covered: You have an acceleration sensor (in 2D: $\ddot x$ and $\ddot y$) and try to calculate velocity ($\dot x$ and $\dot y$) as well as position ($x$ and $y$)
+# Situation covered: You have an acceleration sensor (in 2D: $\ddot x$ and $\ddot y$) and a position sensor ($x$ and $y$) and  calculate velocity ($\dot x$ and $\dot y$).
 
 # <headingcell level=2>
 
@@ -30,13 +30,15 @@ from scipy.stats import norm
 
 # Formal Definition:
 # 
-# $$x_{k+1} = F \cdot x_{k} + B \cdot u$$
+# $$x_{k+1} = A \cdot x_{k}$$
 # 
 # $$x_{k+1} = \begin{bmatrix}1 & 0 & \Delta t & 0 & \frac{1}{2}\Delta t^2 & 0 \\ 0 & 1 & 0 & \Delta t & 0 & \frac{1}{2}\Delta t^2 \\ 0 & 0 & 1 & 0 & \Delta t & 0 \\ 0 & 0 & 0 & 1 & 0 & \Delta t \\ 0 & 0 & 0 & 0 & 1 & 0  \\ 0 & 0 & 0 & 0 & 0 & 1\end{bmatrix} \cdot \begin{bmatrix} x \\ y \\ \dot x \\ \dot y \\ \ddot x \\ \ddot y\end{bmatrix}_{k}$$
 # 
 # $$y = H \cdot x$$
 # 
-# $$y = \begin{bmatrix}0 & 0 & 0 & 0 & 1 & 0 \\ 0 & 0 & 0 & 0 & 0 & 1\end{bmatrix} \cdot x$$
+# The position ($x$ & $y$) as well as the acceleration ($\ddot x$ & $\ddot y$) is measured.
+# 
+# $$y = \begin{bmatrix}1 & 0 & 0 & 0 & 0 & 0 \\0 & 1 & 0 & 0 & 0 & 0 \\0 & 0 & 0 & 0 & 1 & 0 \\ 0 & 0 & 0 & 0 & 0 & 1\end{bmatrix} \cdot x$$
 
 # <headingcell level=4>
 
@@ -46,6 +48,7 @@ from scipy.stats import norm
 
 x = np.matrix([[0.0, 0.0, 0.0, 0.0, 0.0, 0.0]]).T
 print(x, x.shape)
+n=x.size # States
 plt.scatter(x[0],x[1], s=100)
 plt.title('Initial Location')
 
@@ -64,34 +67,28 @@ P = np.matrix([[10.0, 0.0, 0.0, 0.0, 0.0, 0.0],
 print(P, P.shape)
 
 
-# Plot between -10 and 10 with .001 steps.
-xpdf = np.arange(-10, 10, 0.001)
+fig = plt.figure(figsize=(6, 6))
+im = plt.imshow(P, interpolation="none", cmap=plt.get_cmap('binary'))
+plt.title('Initial Covariance Matrix $P$')
+ylocs, ylabels = yticks()
+# set the locations of the yticks
+yticks(arange(7))
+# set the locations and labels of the yticks
+yticks(arange(6),('$x$', '$y$', '$\dot x$', '$\dot y$', '$\ddot x$', '$\ddot y$'), fontsize=22)
 
-fig = plt.figure(figsize=(8,5))
-plt.subplot(231)
-plt.plot(xpdf, norm.pdf(xpdf,0,P[0,0]))
-plt.title('$x$')
+xlocs, xlabels = xticks()
+# set the locations of the yticks
+xticks(arange(7))
+# set the locations and labels of the yticks
+xticks(arange(6),('$x$', '$y$', '$\dot x$', '$\dot y$', '$\ddot x$', '$\ddot y$'), fontsize=22)
 
-plt.subplot(232)
-plt.plot(xpdf, norm.pdf(xpdf,0,P[2,2]))
-plt.title('$\dot x$')
+plt.xlim([-0.5,5.5])
+plt.ylim([5.5, -0.5])
 
-plt.subplot(233)
-plt.plot(xpdf, norm.pdf(xpdf,0,P[4,4]))
-plt.title('$\ddot x$')
-
-plt.subplot(234)
-plt.plot(xpdf, norm.pdf(xpdf,0,P[1,1]))
-plt.title('$y$')
-
-plt.subplot(235)
-plt.plot(xpdf, norm.pdf(xpdf,0,P[3,3]))
-plt.title('$\dot y$')
-
-plt.subplot(236)
-plt.plot(xpdf, norm.pdf(xpdf,0,P[5,5]))
-plt.title('$\ddot y$')
-
+from mpl_toolkits.axes_grid1 import make_axes_locatable
+divider = make_axes_locatable(plt.gca())
+cax = divider.append_axes("right", "5%", pad="3%")
+plt.colorbar(im, cax=cax)
 
 
 plt.tight_layout()
@@ -115,13 +112,13 @@ plt.tight_layout()
 
 dt = 0.5 # Time Step between Filter Steps
 
-F = np.matrix([[1.0, 0.0, dt, 0.0, 1/2.0*dt**2, 0.0],
+A = np.matrix([[1.0, 0.0, dt, 0.0, 1/2.0*dt**2, 0.0],
               [0.0, 1.0, 0.0, dt, 0.0, 1/2.0*dt**2],
               [0.0, 0.0, 1.0, 0.0, dt, 0.0],
               [0.0, 0.0, 0.0, 1.0, 0.0, dt],
               [0.0, 0.0, 0.0, 0.0, 1.0, 0.0],
               [0.0, 0.0, 0.0, 0.0, 0.0, 1.0]])
-print(F, F.shape)
+print(A, A.shape)
 
 # <headingcell level=4>
 
@@ -133,7 +130,9 @@ print(F, F.shape)
 
 # <codecell>
 
-H = np.matrix([[0.0, 0.0, 0.0, 0.0, 1.0, 0.0],
+H = np.matrix([[1.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+               [0.0, 1.0, 0.0, 0.0, 0.0, 0.0],
+               [0.0, 0.0, 0.0, 0.0, 1.0, 0.0],
               [0.0, 0.0, 0.0, 0.0, 0.0, 1.0]])
 print(H, H.shape)
 
@@ -143,11 +142,15 @@ print(H, H.shape)
 
 # <codecell>
 
-ra = 10.0
-R = np.matrix([[ra, 0.0],
-               [0.0, ra]])
+ra = 10.0**2
+R = np.matrix([[ra, 0.0, 0.0, 0.0],
+               [0.0, ra, 0.0, 0.0],
+               [0.0, 0.0, ra, 0.0],
+               [0.0, 0.0, 0.0, ra]])
 print(R, R.shape)
 
+# Plot between -10 and 10 with .001 steps.
+xpdf = np.arange(-10, 10, 0.001)
 plt.subplot(121)
 plt.plot(xpdf, norm.pdf(xpdf,0,R[0,0]))
 plt.title('$x$')
@@ -159,9 +162,9 @@ plt.title('$y$')
 
 plt.tight_layout()
 
-# <headingcell level=4>
+# <headingcell level=3>
 
-# Process Noise Covariance
+# Process Noise Covariance Matrix Q for CV Model
 
 # <markdowncell>
 
@@ -169,15 +172,17 @@ plt.tight_layout()
 # 
 # $$Q = \begin{bmatrix}\sigma_{x}^2 & \sigma_{xy} & \sigma_{x \dot x} & \sigma_{x \dot y} & \sigma_{x \ddot x} & \sigma_{x \ddot y} \\ \sigma_{yx} & \sigma_{y}^2 & \sigma_{y \dot x} & \sigma_{y \dot y} & \sigma_{y \ddot x} & \sigma_{y \ddot y} \\ \sigma_{\dot x x} & \sigma_{\dot x y} & \sigma_{\dot x}^2 & \sigma_{\dot x \dot y} & \sigma_{\dot x \ddot x} & \sigma_{\dot x \ddot y} \\ \sigma_{\dot y x} & \sigma_{\dot y y} & \sigma_{\dot y \dot x} & \sigma_{\dot y}^2 & \sigma_{\dot y \ddot x} & \sigma_{\dot y \ddot y} \\ \sigma_{\ddot x x} & \sigma_{\ddot x y} & \sigma_{\ddot x \dot x} & \sigma_{\ddot x \dot y} & \sigma_{\ddot x}^2 & \sigma_{\ddot x \ddot y} \\ \sigma_{\ddot y x} & \sigma_{\ddot y y} & \sigma_{\ddot y \dot x} & \sigma_{\ddot y \dot y} & \sigma_{\ddot y \ddot x} & \sigma_{\ddot y}^2\end{bmatrix}$$
 # 
-# Referring to [Schubert, R., Adam, C., Obst, M., Mattern, N., Leonhardt, V., & Wanielik, G. (2011). Empirical evaluation of vehicular models for ego motion estimation. 2011 IEEE Intelligent Vehicles Symposium (IV), 534–539. doi:10.1109/IVS.2011.5940526], the standard deviation for acceleration process noise can be assumed with $8.8 \frac{m}{s^2}$.
-# 
 # To easily calcualte Q, one can ask the question: How the noise effects my state vector? For example, how the acceleration change the position over one timestep dt.
 # 
-# This leads to the equation $dx = \frac{1}{2}dt^2 \cdot a_n$ with $a_n$ as the noisy acceleration. The velocity is influenced with $d\dot x = dt \cdot a_n$ and the acceleration is influenced by the acceleration with factor $1.0$.
+# One can calculate Q as
+# 
+# $$Q = G\cdot G^T \cdot \sigma_v^2$$
+# 
+# with $G = \begin{bmatrix}0.5dt^2 & 0.5dt^2 & dt & dt & 1.0 & 1.0\end{bmatrix}^T$ and $\sigma_v$ as the acceleration process noise, which can be assumed for a vehicle to be $8.8m/s^2$, according to: Schubert, R., Adam, C., Obst, M., Mattern, N., Leonhardt, V., & Wanielik, G. (2011). [Empirical evaluation of vehicular models for ego motion estimation](http://ieeexplore.ieee.org/xpl/articleDetails.jsp?arnumber=5940526). 2011 IEEE Intelligent Vehicles Symposium (IV), 534–539. doi:10.1109/IVS.2011.5940526
 
 # <codecell>
 
-sa = 0.5
+sa = 1.0
 G = np.matrix([[1/2.0*dt**2],
                [1/2.0*dt**2],
                [dt],
@@ -188,32 +193,39 @@ Q = G*G.T*sa**2
 
 print(Q, Q.shape)
 
+# <codecell>
 
-fig = plt.figure(figsize=(8,5))
+from sympy import Symbol, Matrix
+from sympy.interactive import printing
+printing.init_printing()
+dts = Symbol('\Delta t')
+Qs = Matrix([[0.5*dts**2],[0.5*dts**2],[dts],[dts],[1.0],[1.0]])
+Qs*Qs.T
 
-plt.subplot(231)
-plt.plot(xpdf, norm.pdf(xpdf,0,Q[0,0]))
-plt.title('$x$')
+# <codecell>
 
-plt.subplot(232)
-plt.plot(xpdf, norm.pdf(xpdf,0,Q[2,2]))
-plt.title('$\dot x$')
+fig = plt.figure(figsize=(6, 6))
+im = plt.imshow(Q, interpolation="none", cmap=plt.get_cmap('binary'))
+plt.title('Process Noise Covariance Matrix $Q$')
+ylocs, ylabels = yticks()
+# set the locations of the yticks
+yticks(arange(7))
+# set the locations and labels of the yticks
+yticks(arange(6),('$x$', '$y$', '$\dot x$', '$\dot y$', '$\ddot x$', '$\ddot y$'), fontsize=22)
 
-plt.subplot(233)
-plt.plot(xpdf, norm.pdf(xpdf,0,Q[4,4]))
-plt.title('$\ddot x$')
+xlocs, xlabels = xticks()
+# set the locations of the yticks
+xticks(arange(7))
+# set the locations and labels of the yticks
+xticks(arange(6),('$x$', '$y$', '$\dot x$', '$\dot y$', '$\ddot x$', '$\ddot y$'), fontsize=22)
 
-plt.subplot(234)
-plt.plot(xpdf, norm.pdf(xpdf,0,Q[1,1]))
-plt.title('$y$')
+plt.xlim([-0.5,5.5])
+plt.ylim([5.5, -0.5])
 
-plt.subplot(235)
-plt.plot(xpdf, norm.pdf(xpdf,0,Q[3,3]))
-plt.title('$\dot y$')
-
-plt.subplot(236)
-plt.plot(xpdf, norm.pdf(xpdf,0,Q[5,5]))
-plt.title('$\ddot y$')
+from mpl_toolkits.axes_grid1 import make_axes_locatable
+divider = make_axes_locatable(plt.gca())
+cax = divider.append_axes("right", "5%", pad="3%")
+plt.colorbar(im, cax=cax)
 
 plt.tight_layout()
 
@@ -223,37 +235,119 @@ plt.tight_layout()
 
 # <codecell>
 
-I = np.eye(6)
+I = np.eye(n)
 print(I, I.shape)
 
 # <headingcell level=2>
 
 # Measurement
 
+# <headingcell level=4>
+
+# Load Data from real sensor
+
 # <codecell>
 
-m = 500 # Measurements
+datafile = '2014-02-14-002-Data.csv'
+
+date, \
+time, \
+millis, \
+ax, \
+ay, \
+az, \
+rollrate, \
+pitchrate, \
+yawrate, \
+roll, \
+pitch, \
+yaw, \
+speed, \
+course, \
+latitude, \
+longitude, \
+altitude, \
+pdop, \
+hdop, \
+vdop, \
+epe, \
+fix, \
+satellites_view, \
+satellites_used, \
+temp = np.loadtxt(datafile, delimiter=',', unpack=True, 
+                  converters={1: strpdate2num('%H%M%S%f'),
+                              0: strpdate2num('%d%m%y')},
+                  skiprows=1)
+
+# Display GPS Heatmap from Disk
+from IPython.display import Image as ImageDisp
+gpsheatmap = ImageDisp(filename='2014-02-14-002-GPS-heatmap.png')
+gpsheatmap
+
+# <headingcell level=4>
+
+# Convert Lat/Lon to Meters
+
+# <codecell>
+
+dlat = np.hstack((0.0, np.diff(latitude)))
+dlon = np.hstack((0.0, np.diff(longitude)))
+dt_s = np.hstack((0.0, np.diff(millis/1000.0)))
+
+dy = 111.32 * np.cos(latitude * np.pi/180.0) * dlon # in km
+dx = 111.32 * dlat # in km
+
+mx = np.cumsum(1000.0 * dx) # in m
+my = np.cumsum(1000.0 * dy) # in m
+
+fig = plt.figure(figsize=(9,9))
+plt.scatter(mx,my, s=20, label='Measurement', c='k')
+plt.scatter(mx[0],my[0], s=100, label='Start', c='g')
+plt.scatter(mx[-1],my[-1], s=100, label='Goal', c='r')
+plt.xlabel('m')
+plt.ylabel('m')
+plt.legend(loc='best')
+
+# <headingcell level=3>
 
 # Acceleration
-sa= 0.1 # Sigma for acceleration
-ax= 0.0 # in X
-ay= 0.0 # in Y
 
-mx = np.array(ax+sa*np.random.randn(m))
-my = np.array(ay+sa*np.random.randn(m))
+# <markdowncell>
+
+# The car measures the acceleration in car's coordinate system. Therefore one have to rotate the acceleration vector to fit in the earth centered, earth fixed reference frame
+
+# <codecell>
+
+R
+
+# <codecell>
 
 measurements = np.vstack((mx,my))
 
 print(measurements.shape)
+print('Standard Deviation of Acceleration Measurements=%.2f' % np.std(mx))
+print('You assumed %.2f in R.' % R[0,0])
+
+# <headingcell level=3>
+
+# Acceleration
 
 # <codecell>
 
 fig = plt.figure(figsize=(16,9))
+subplot(211)
 plt.step(range(m),mx, label='$a_x$')
 plt.step(range(m),my, label='$a_y$')
 plt.ylabel('Acceleration')
 plt.title('Measurements')
 plt.legend(loc='best',prop={'size':18})
+
+subplot(212)
+plt.step(range(m),mpx, label='$x$')
+plt.step(range(m),mpy, label='$y$')
+plt.ylabel('Position')
+plt.legend(loc='best',prop={'size':18})
+plt.xlabel('Filter Step')
 
 # <codecell>
 
@@ -285,11 +379,20 @@ Kddy=[]
 
 # <markdowncell>
 
-# ![Kalman Filter](http://bilgin.esme.org/portals/0/images/kalman/iteration_steps.gif)
+# ![Kalman Filter](http://www.cbcity.de/wp-content/uploads/2013/05/Kalman-Filter-Step1-770x429.png)
 
 # <codecell>
 
-for n in range(len(measurements[0])):
+for n in range(m):
+    
+    # Time Update (Prediction)
+    # ========================
+    # Project the state ahead
+    x = A*x
+    
+    # Project the error covariance ahead
+    P = A*P*A.T + Q    
+    
     
     # Measurement Update (Correction)
     # ===============================
@@ -299,21 +402,14 @@ for n in range(len(measurements[0])):
 
     
     # Update the estimate via z
-    Z = measurements[:,n].reshape(2,1)
+    Z = measurements[:,n].reshape(H.shape[0],1)
     y = Z - (H*x)                            # Innovation or Residual
     x = x + (K*y)
     
     # Update the error covariance
     P = (I - (K*H))*P
 
-    # Time Update (Prediction)
-    # ========================
-    # Project the state ahead
-    x = F*x
-    
-    # Project the error covariance ahead
-    P = F*P*F.T + Q
-    
+   
     
     # Save states for Plotting
     xt.append(float(x[0]))
@@ -337,16 +433,13 @@ for n in range(len(measurements[0])):
     Kddx.append(float(K[4,0]))
     Kddy.append(float(K[5,0]))
 
-# <codecell>
-
-
 # <headingcell level=2>
 
 # Plots
 
 # <headingcell level=3>
 
-# Unsicherheiten
+# Uncertainty
 
 # <codecell>
 
@@ -386,9 +479,9 @@ plt.legend(loc='best',prop={'size':18})
 
 # <codecell>
 
-fig = plt.figure(figsize=(5, 5))
-im = plt.imshow(P, interpolation="none")
-plt.title('Covariance Matrix $P$')
+fig = plt.figure(figsize=(6, 6))
+im = plt.imshow(P, interpolation="none", cmap=plt.get_cmap('binary'))
+plt.title('Covariance Matrix $P$ (after %i Filter Steps)' % (m))
 ylocs, ylabels = yticks()
 # set the locations of the yticks
 yticks(arange(7))
@@ -411,6 +504,10 @@ plt.colorbar(im, cax=cax)
 
 
 plt.tight_layout()
+
+# <headingcell level=2>
+
+# State Vector
 
 # <codecell>
 
@@ -442,6 +539,10 @@ plt.ylabel('')
 plt.legend(loc='best',prop={'size':22})
 plt.ylabel('Position')
 
+# <headingcell level=2>
+
+# Position x/y
+
 # <codecell>
 
 fig = plt.figure(figsize=(16,16))
@@ -454,11 +555,18 @@ plt.ylabel('Y')
 plt.title('Position')
 plt.legend(loc='best')
 axis('equal')
+plt.savefig('Kalman-Filter-CA-Position.png', dpi=72, transparent=True, bbox_inches='tight')
 
 # <headingcell level=1>
 
 # Conclusion
 
+# <codecell>
+
+dist=np.cumsum(np.sqrt(np.diff(xt)**2 + np.diff(yt)**2))
+print('Your drifted %d units from origin.' % dist[-1])
+
 # <markdowncell>
 
+# As you can see, bad idea just to measure the acceleration and try to get the position. The errors integrating up, so your position estimation is drifting.
 
