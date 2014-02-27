@@ -50,7 +50,7 @@ state = Matrix([xs,ys,psis,vs,dpsis])
 
 # <codecell>
 
-x = np.matrix([[0.0, 0.0, 2.0, 1.0, 0.0001]]).T
+x = np.matrix([[0.0, 0.0, -0.2, 10.0, 0.001]]).T
 print(x, x.shape)
 
 numstates=x.size # States
@@ -73,7 +73,7 @@ plt.axis('equal')
 
 # <codecell>
 
-P = np.diag([0.0, 0.0, 500.0, 500.0, 50.0])
+P = np.diag([1000.0, 1000.0, 1000.0, 1000.0, 1000.0])
 print(P, P.shape)
 
 
@@ -168,6 +168,8 @@ Gs
 # 
 # One method is based on the interpretation of the matrix as the weight of the dynamics prediction from the state equations
 # Q relative to the measurements.
+# 
+# One can assume the velocity process noise for a vehicle with $\sigma_v=1.5m/s$ and the yaw rate process noise with $\sigma_\psi=0.29rad/s$, when a timestep takes 0.02s (50Hz).
 
 # <codecell>
 
@@ -175,8 +177,8 @@ control
 
 # <codecell>
 
-svQ = 1.5**2
-syQ = 0.01**2
+svQ = 0.05**2
+syQ = 0.001**2
 
 Q = np.matrix([[svQ, 0.0],
                [0.0, syQ]])
@@ -221,7 +223,7 @@ plt.tight_layout()
 
 # <codecell>
 
-sp = 6.0**2
+sp = 60.0**2
 R = np.matrix([[sp, 0.0],
                [0.0, sp]])
 
@@ -286,9 +288,16 @@ satellites_used, \
 temp = np.loadtxt(datafile, delimiter=',', unpack=True, 
                   converters={1: strpdate2num('%H%M%S%f'),
                               0: strpdate2num('%d%m%y')},
-                  skiprows=1)
+                  skiprows=1000)
 
-yawrate=yawrate*-1.0
+# A course of 0° means the Car is traveling north bound
+# and 90° means it is traveling east bound.
+# In the Calculation following, East is Zero and North is 90°
+# We need an offset.
+course =(-course+90.0)
+
+# <codecell>
+
 
 # <headingcell level=3>
 
@@ -298,13 +307,16 @@ yawrate=yawrate*-1.0
 
 dt = 1.0/50.0 # Sample Rate of the Measurements is 50Hz
 
-Py = 111.32 * np.cos(latitude*np.pi/180.0) * longitude # in km
-Px = 111.32 * latitude # in km
-dy = np.hstack((0.0, np.diff(1000.0*Py)))# in m
+Px = 111.32 * np.cos(latitude*np.pi/180.0) * longitude # in km
+Py = 111.32 * latitude # in km
 dx = np.hstack((0.0, np.diff(1000.0*Px)))# in m
+dy = np.hstack((0.0, np.diff(1000.0*Py)))# in m
 
 mx = np.cumsum(dx)
 my = np.cumsum(dy)
+
+GPS=(np.abs(dy)>0.0).astype('bool') # GPS Trigger for Kalman Filter
+GPS[0]=True
 
 # <headingcell level=3>
 
@@ -312,7 +324,7 @@ my = np.cumsum(dy)
 
 # <codecell>
 
-mx[250:260]-=10
+my[200:300]+=5.0 # Static Drift
 
 # <codecell>
 
@@ -359,8 +371,8 @@ Kdx= []
 Kdy= []
 Kddx=[]
 Kddy=[]
-K = np.matrix([[1.0], [1.0], [1.0], [1.0], [1.0]])
-Z = np.matrix([[0.0],[0.0]])
+K = np.matrix([[0.0], [0.0], [0.0], [0.0], [0.0]])
+Z = np.matrix([[0.0],[0.0],[0.0]])
 
 # <headingcell level=2>
 
@@ -368,9 +380,13 @@ Z = np.matrix([[0.0],[0.0]])
 
 # <markdowncell>
 
+# ![Extended Kalman Filter Step](http://www.cbcity.de/wp-content/uploads/2013/06/Extended-Kalman-Filter-Step-770x447.png)
+
+# <markdowncell>
+
 # Constant Turn Rate, Constant Velocity Model for a vehicle
 # 
-# $$x_k= \begin{bmatrix} x \\ y \\ \psi \\ v \\ \dot\psi \end{bmatrix} = \begin{bmatrix} \text{Position X} \\ \text{Position Y} \\ \text{Heading} \\ \text{Velocity} \\ \text{Yaw Rate} \end{bmatrix} =  \underbrace{\begin{bmatrix}x(0) \\ x(1) \\ x(2) \\ x(3) \\ x(4)  \end{bmatrix}}_{\textrm{Python Nomenclature}}$$
+# $$x_k= \begin{bmatrix} x \\ y \\ \psi \\ v \\ \dot\psi \end{bmatrix} = \begin{bmatrix} \text{Position X} \\ \text{Position Y} \\ \text{Heading} \\ \text{Velocity} \\ \text{Yaw Rate} \end{bmatrix} =  \underbrace{\begin{matrix}x[0] \\ x[1] \\ x[2] \\ x[3] \\ x[4]  \end{matrix}}_{\textrm{Python Nomenclature}}$$
 
 # <codecell>
 
@@ -380,7 +396,7 @@ for filterstep in range(m):
     vt=speed[filterstep]/3.6
     yat=yawrate[filterstep]/180.0*np.pi
     
-    if np.abs(yat)<0.00001: # avoid numerical issues (dividing with 0)
+    if np.abs(yat)<0.00001: # avoid numerical issues (dividing by 0)
             yat=0.0001    
 
     
@@ -388,9 +404,9 @@ for filterstep in range(m):
     # ========================
     # Project the state ahead
     # see "Dynamic Matrix"
-    x[0] = x[0] + (x[3]/x[4]) * (np.sin(x[4]*dt+x[2]) - np.sin(x[2]))
-    x[1] = x[1] + (x[3]/x[4]) * (-np.cos(x[4]*dt+x[2])+ np.cos(x[2]))
-    x[2] = (x[2] + x[4]*dt + np.pi) % (2.0*np.pi) - np.pi
+    x[0] = x[0] + (vt/yat) * (np.sin(yat*dt+x[2]) - np.sin(x[2]))
+    x[1] = x[1] + (vt/yat) * (-np.cos(yat*dt+x[2])+ np.cos(x[2]))
+    x[2] = (x[2] + yat*dt + np.pi) % (2.0*np.pi) - np.pi
     x[3] = vt   # this is the "control", actually a measurement, which drives the state
     x[4] = yat  # this is the "control", actually a measurement, which drives the state
     
@@ -423,9 +439,11 @@ for filterstep in range(m):
     # Project the error covariance ahead
     P = JA*P*JA.T + JG*Q*JG.T
     
-    
-    # If there is a new GPS Measurement, Correct the Prediction
-    if np.abs(dy[filterstep])>0.0:
+    # Because GPS is sampled with 10Hz and the other Measurements, as well as
+    # the filter are sampled with 50Hz, one have to wait for correction until
+    # there is a new GPS Measurement
+    if GPS[filterstep]:
+        
         # Measurement Update (Correction)
         # ===============================
         
@@ -470,9 +488,6 @@ for filterstep in range(m):
     Kdy.append(float(K[3,0]))
     Kddx.append(float(K[4,0]))
 
-# <codecell>
-
-
 # <headingcell level=2>
 
 # Plots
@@ -484,11 +499,11 @@ for filterstep in range(m):
 # <codecell>
 
 fig = plt.figure(figsize=(16,9))
-plt.plot(range(m),Px, label='$x$')
-plt.plot(range(m),Py, label='$y$')
-plt.plot(range(m),Pdx, label='$\psi$')
-plt.plot(range(m),Pdy, label='$v$')
-plt.plot(range(m),Pddx, label='$\dot \psi$')
+plt.step(range(m),Px, label='$x$')
+plt.step(range(m),Py, label='$y$')
+plt.step(range(m),Pdx, label='$\psi$')
+plt.step(range(m),Pdy, label='$v$')
+plt.step(range(m),Pddx, label='$\dot \psi$')
 
 plt.xlabel('Filter Step')
 plt.ylabel('')
@@ -530,11 +545,11 @@ plt.tight_layout()
 # <codecell>
 
 fig = plt.figure(figsize=(16,9))
-plt.plot(range(len(measurements[0])),Kx, label='$x$')
-plt.plot(range(len(measurements[0])),Ky, label='$y$')
-plt.plot(range(len(measurements[0])),Kdx, label='$\psi$')
-plt.plot(range(len(measurements[0])),Kdy, label='$v$')
-plt.plot(range(len(measurements[0])),Kddx, label='$\dot \psi$')
+plt.step(range(len(measurements[0])),Kx, label='$x$')
+plt.step(range(len(measurements[0])),Ky, label='$y$')
+plt.step(range(len(measurements[0])),Kdx, label='$\psi$')
+plt.step(range(len(measurements[0])),Kdy, label='$v$')
+plt.step(range(len(measurements[0])),Kddx, label='$\dot \psi$')
 
 
 plt.xlabel('Filter Step')
@@ -560,22 +575,23 @@ plt.ylabel('Position')
 
 plt.subplot(412)
 plt.step(range(len(measurements[0])),dxt, label='$\psi$')
-plt.step(range(len(measurements[0])),course/180.0*np.pi, label='$\psi$ (GPS)')
+plt.step(range(len(measurements[0])),course/180.0*np.pi, label='$\psi$ (from GPS as reference)')
 plt.ylabel('Course')
-plt.legend(loc='best',prop={'size':22})
+plt.legend(loc='best',prop={'size':16})
            
 plt.subplot(413)
 plt.step(range(len(measurements[0])),dyt, label='$v$')
-plt.step(range(len(measurements[0])),speed/3.6, label='$v$ (GPS)')
+plt.step(range(len(measurements[0])),speed/3.6, label='$v$ (from GPS as reference)')
 plt.ylabel('Velocity')
-plt.legend(loc='best',prop={'size':22})
+plt.ylim([0, 30])
+plt.legend(loc='best',prop={'size':16})
 
 plt.subplot(414)
 plt.step(range(len(measurements[0])),ddxt, label='$\dot \psi$')
-plt.step(range(len(measurements[0])),yawrate/180.0*np.pi, label='$\dot \psi$ (IMU)')
+plt.step(range(len(measurements[0])),yawrate/180.0*np.pi, label='$\dot \psi$ (from IMU as reference)')
 plt.ylabel('Yaw Rate')
-plt.ylim([-0.5, 0.5])
-plt.legend(loc='best',prop={'size':22})
+plt.ylim([-0.6, 0.6])
+plt.legend(loc='best',prop={'size':16})
 plt.xlabel('Filter Step')
 
 plt.savefig('Extended-Kalman-Filter-CTRV-State-Estimates.png', dpi=72, transparent=True, bbox_inches='tight')
