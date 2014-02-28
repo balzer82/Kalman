@@ -13,7 +13,11 @@ from scipy.stats import norm
 
 # <markdowncell>
 
-# Situation covered: You have an acceleration sensor (in 2D: $\ddot x$ and $\ddot y$) and a Position Sensor (e.g. GPS) and try to calculate velocity ($\dot x$ and $\dot y$) as well as position ($x$ and $y$) of a person holding a smartphone in his/her hand. 
+# Situation covered: You have an acceleration sensor (in 2D: $\ddot x$ and $\ddot y$) and a Position Sensor (e.g. GPS) and try to calculate velocity ($\dot x$ and $\dot y$) as well as position ($x$ and $y$) of a person holding a smartphone in his/her hand.
+# 
+# ![Smartphone](http://farm8.staticflickr.com/7324/12470549875_d562b39f52.jpg)
+# 
+# unter CC BY-NC 2.0 von flickr.com von Canadian Pacific
 
 # <headingcell level=2>
 
@@ -174,7 +178,7 @@ plt.tight_layout()
 
 # <headingcell level=2>
 
-# Process Noise Covariance Matrix Q for CV Model
+# Process Noise Covariance Matrix Q for CA Model
 
 # <markdowncell>
 
@@ -205,7 +209,7 @@ Qs*Qs.T
 
 # <codecell>
 
-sa = 0.1
+sa = 0.001
 G = np.matrix([[1/2.0*dt**2],
                [1/2.0*dt**2],
                [dt],
