@@ -24,10 +24,9 @@ printing.init_printing()
 
 # <markdowncell>
 
-# Constant Turn Rate, Constant Velocity Model for a vehicle
+# Constant Turn Rate, Constant Velocity Model for a vehicle ![CTRV Model](https://raw.github.com/balzer82/Kalman/master/CVCT-Model.png)
 # 
 # $$x_k= \left[ \matrix{ x \\ y \\ \psi \\ v \\ \dot\psi} \right] = \left[ \matrix{ \text{Position X} \\ \text{Position Y} \\ \text{Heading} \\ \text{Velocity} \\ \text{Yaw Rate}} \right]$$
-# 
 
 # <markdowncell>
 
