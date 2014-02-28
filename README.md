@@ -3,6 +3,8 @@ Multidimensional Kalman-Filter
 Some Python Implementations of the Kalman Filter
 ------------------------------
 
+See [Vimeo](http://vimeo.com/album/2754700) for some Explanations.
+
 ![Kalman Filter Step](https://raw.github.com/balzer82/Kalman/master/Kalman-Filter-Step.png)
 
 ## Kalman Filter with Constant Velocity Model
