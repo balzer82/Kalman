@@ -3,7 +3,7 @@ Multidimensional Kalman-Filter
 Some Python Implementations of the Kalman Filter
 ------------------------------
 
-See [Vimeo](http://vimeo.com/album/2754700) for some Explanations.
+####See [Vimeo](http://vimeo.com/album/2754700) for some Explanations.
 
 ![Kalman Filter Step](https://raw.github.com/balzer82/Kalman/master/Kalman-Filter-Step.png)
 
@@ -37,6 +37,8 @@ Here the Measurement Covariance Matrix R is calculated dynamically via the maxim
 ## Extended Kalman Filter with Constant Velocity Constant Turn (CVCT) Model
 
 Situation covered: You have an velocity sensor which measures the vehicle speed (v) in heading direction (ψ) and a yaw rate sensor (ψ˙) which both have to fused with the position (x & y) from a GPS sensor.
+
+![CVCT Model](https://raw.github.com/balzer82/Kalman/master/CVCT-Model.png)
 
 ####[View IPython Notebook](http://nbviewer.ipython.org/github/balzer82/Kalman/blob/master/Extended-Kalman-Filter-CTRV.ipynb?create=1)
 
