@@ -34,11 +34,11 @@ Here the Measurement Covariance Matrix R is calculated dynamically via the maxim
 
 ![EKF Filter Step](https://raw.github.com/balzer82/Kalman/master/Extended-Kalman-Filter-Step.jpg)
 
-## Extended Kalman Filter with Constant Velocity Constant Turn (CVCT) Model
+## Extended Kalman Filter with Constant Turn Rate and Velocity (CTRV) Model
 
 Situation covered: You have an velocity sensor which measures the vehicle speed (v) in heading direction (ψ) and a yaw rate sensor (ψ˙) which both have to fused with the position (x & y) from a GPS sensor.
 
-![CVCT Model](https://raw.github.com/balzer82/Kalman/master/CVCT-Model.png)
+![CTRV Model](https://raw.github.com/balzer82/Kalman/master/CVCT-Model.png)
 
 ####[View IPython Notebook](http://nbviewer.ipython.org/github/balzer82/Kalman/blob/master/Extended-Kalman-Filter-CTRV.ipynb?create=1)
 
