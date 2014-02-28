@@ -379,7 +379,7 @@ Z = np.matrix([[0.0],[0.0],[0.0]])
 
 # <markdowncell>
 
-# ![Extended Kalman Filter Step](http://www.cbcity.de/wp-content/uploads/2013/06/Extended-Kalman-Filter-Step-770x447.png)
+# ![Extended Kalman Filter Step](https://raw.github.com/balzer82/Kalman/master/Extended-Kalman-Filter-Step.jpg)
 
 # <markdowncell>
 
