@@ -32,7 +32,7 @@ Here the Measurement Covariance Matrix R is calculated dynamically via the maxim
 
 # Extended Kalman Filter
 
-![EKF Filter Step](https://raw.github.com/balzer82/Kalman/master/Extended-Kalman-Filter-Step.png)
+![EKF Filter Step](https://raw.github.com/balzer82/Kalman/master/Extended-Kalman-Filter-Step.jpg)
 
 ## Extended Kalman Filter with Constant Velocity Constant Turn (CVCT) Model
 
