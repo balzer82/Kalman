@@ -42,28 +42,44 @@
 <h2>
 <a name="some-python-implementations-of-the-kalman-filter" class="anchor" href="#some-python-implementations-of-the-kalman-filter"><span class="octicon octicon-link"></span></a>Some Python Implementations of the Kalman Filter</h2>
 
+<h4>
+<a name="see-vimeo-for-some-explanations" class="anchor" href="#see-vimeo-for-some-explanations"><span class="octicon octicon-link"></span></a>See <a href="http://vimeo.com/album/2754700">Vimeo</a> for some Explanations.</h4>
+
 <p><img src="https://raw.github.com/balzer82/Kalman/master/Kalman-Filter-Step.png" alt="Kalman Filter Step"></p>
 
 <h2>
 <a name="kalman-filter-with-constant-velocity-model" class="anchor" href="#kalman-filter-with-constant-velocity-model"><span class="octicon octicon-link"></span></a>Kalman Filter with Constant Velocity Model</h2>
 
-<h3>
+<p>Situation covered: You drive with your car in a tunnel and the GPS signal is lost. Now the car has to determine, where it is in the tunnel. The only information it has, is the velocity in driving direction. The x and y component of the velocity (x˙ and y˙) can be calculated from the absolute velocity (revolutions of the wheels) and the heading of the vehicle (yaw rate sensor).</p>
+
+<h4>
 <a name="view-ipython-notebook" class="anchor" href="#view-ipython-notebook"><span class="octicon octicon-link"></span></a><a href="http://nbviewer.ipython.org/github/balzer82/Kalman/blob/master/Kalman-Filter-CV.ipynb?create=1">View IPython Notebook</a>
-</h3>
+</h4>
 
 <h2>
 <a name="kalman-filter-with-constant-acceleration-model" class="anchor" href="#kalman-filter-with-constant-acceleration-model"><span class="octicon octicon-link"></span></a>Kalman Filter with Constant Acceleration Model</h2>
 
-<h3>
+<p>Situation covered: You have an acceleration sensor (in 2D: x¨ and y¨) and try to calculate velocity (x˙ and y˙) as well as position (x and y) of a person holding a smartphone in his/her hand.</p>
+
+<h4>
 <a name="view-ipython-notebook-1" class="anchor" href="#view-ipython-notebook-1"><span class="octicon octicon-link"></span></a><a href="http://nbviewer.ipython.org/github/balzer82/Kalman/blob/master/Kalman-Filter-CA.ipynb?create=1">View IPython Notebook</a>
-</h3>
+</h4>
+
+<p>Second example is the same dynamic model but this time you measure the position as well as the acceleration. Both values have to be fused together with the Kalman Filter.
+Situation covered: You have an acceleration sensor (in 2D: x¨ and y¨) and a Position Sensor (e.g. GPS) and try to calculate velocity (x˙ and y˙) as well as position (x and y) of a person holding a smartphone in his/her hand.</p>
+
+<h4>
+<a name="view-ipython-notebook-2" class="anchor" href="#view-ipython-notebook-2"><span class="octicon octicon-link"></span></a><a href="http://nbviewer.ipython.org/github/balzer82/Kalman/blob/master/Kalman-Filter-CA-2.ipynb?create=1">View IPython Notebook</a>
+</h4>
 
 <h2>
 <a name="adaptive-kalman-filter-with-constant-velocity-model" class="anchor" href="#adaptive-kalman-filter-with-constant-velocity-model"><span class="octicon octicon-link"></span></a>Adaptive Kalman Filter with Constant Velocity Model</h2>
 
-<h3>
-<a name="view-ipython-notebook-2" class="anchor" href="#view-ipython-notebook-2"><span class="octicon octicon-link"></span></a><a href="http://nbviewer.ipython.org/github/balzer82/Kalman/blob/master/Adaptive-Kalman-Filter-CV.ipynb?create=1">View IPython Notebook</a>
-</h3>
+<p>Here the Measurement Covariance Matrix R is calculated dynamically via the maximum likelihood of the acutal standard deviation of the last measurements.</p>
+
+<h4>
+<a name="view-ipython-notebook-3" class="anchor" href="#view-ipython-notebook-3"><span class="octicon octicon-link"></span></a><a href="http://nbviewer.ipython.org/github/balzer82/Kalman/blob/master/Adaptive-Kalman-Filter-CV.ipynb?create=1">View IPython Notebook</a>
+</h4>
 
 <h1>
 <a name="extended-kalman-filter" class="anchor" href="#extended-kalman-filter"><span class="octicon octicon-link"></span></a>Extended Kalman Filter</h1>
@@ -73,9 +89,13 @@
 <h2>
 <a name="extended-kalman-filter-with-constant-velocity-constant-turn-cvct-model" class="anchor" href="#extended-kalman-filter-with-constant-velocity-constant-turn-cvct-model"><span class="octicon octicon-link"></span></a>Extended Kalman Filter with Constant Velocity Constant Turn (CVCT) Model</h2>
 
-<h3>
-<a name="view-ipython-notebook-3" class="anchor" href="#view-ipython-notebook-3"><span class="octicon octicon-link"></span></a><a href="http://nbviewer.ipython.org/github/balzer82/Kalman/blob/master/Extended-Kalman-Filter-CTRV.ipynb?create=1">View IPython Notebook</a>
-</h3>
+<p>Situation covered: You have an velocity sensor which measures the vehicle speed (v) in heading direction (ψ) and a yaw rate sensor (ψ˙) which both have to fused with the position (x &amp; y) from a GPS sensor.</p>
+
+<p><img src="https://raw.github.com/balzer82/Kalman/master/CVCT-Model.png" alt="CVCT Model"></p>
+
+<h4>
+<a name="view-ipython-notebook-4" class="anchor" href="#view-ipython-notebook-4"><span class="octicon octicon-link"></span></a><a href="http://nbviewer.ipython.org/github/balzer82/Kalman/blob/master/Extended-Kalman-Filter-CTRV.ipynb?create=1">View IPython Notebook</a>
+</h4>
         </article>
       </div>
     </div>
