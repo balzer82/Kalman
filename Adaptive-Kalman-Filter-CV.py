@@ -48,7 +48,7 @@ from scipy.stats import norm
 
 x = np.matrix([[0.0, 0.0, 0.0, 0.0]]).T
 print(x, x.shape)
-plt.scatter(x[0],x[1], s=100)
+plt.scatter(float(x[0]),float(x[1]), s=100)
 plt.title('Initial Location')
 
 # <headingcell level=3>
@@ -166,11 +166,11 @@ plt.tight_layout()
 # 
 # $$Q = G\cdot G^T \cdot \sigma_v^2$$
 # 
-# with $G = \begin{bmatrix}0.5dt^2 & 0.5dt^2 & dt & dt\end{bmatrix}^T$ and $\sigma_v$ as the acceleration process noise, which can be assumed for a vehicle to be $8.8m/s^2$, according to: Schubert, R., Adam, C., Obst, M., Mattern, N., Leonhardt, V., & Wanielik, G. (2011). [Empirical evaluation of vehicular models for ego motion estimation](http://ieeexplore.ieee.org/xpl/articleDetails.jsp?arnumber=5940526). 2011 IEEE Intelligent Vehicles Symposium (IV), 534–539. doi:10.1109/IVS.2011.5940526
+# with $G = \begin{bmatrix}0.5dt^2 & 0.5dt^2 & dt & dt\end{bmatrix}^T$ and $\sigma_v$ as the acceleration process noise.
 
 # <codecell>
 
-sv = 8.8
+sv = 1.0
 
 G = np.matrix([[0.5*dt**2],
                [0.5*dt**2],
@@ -281,7 +281,7 @@ Kdy= []
 
 # <markdowncell>
 
-# ![Kalman Filter](http://www.cbcity.de/wp-content/uploads/2013/05/Kalman-Filter-Step1-770x429.png)
+# ![Kalman Filter](https://raw.github.com/balzer82/Kalman/master/Kalman-Filter-Step.png)
 
 # <codecell>
 

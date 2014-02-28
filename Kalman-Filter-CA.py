@@ -13,7 +13,7 @@ from scipy.stats import norm
 
 # <markdowncell>
 
-# Situation covered: You have an acceleration sensor (in 2D: $\ddot x$ and $\ddot y$) and try to calculate velocity ($\dot x$ and $\dot y$) as well as position ($x$ and $y$)
+# Situation covered: You have an acceleration sensor (in 2D: $\ddot x$ and $\ddot y$) and try to calculate velocity ($\dot x$ and $\dot y$) as well as position ($x$ and $y$) of a person holding a smartphone in his/her hand.
 
 # <headingcell level=2>
 
@@ -30,7 +30,9 @@ from scipy.stats import norm
 
 # Formal Definition:
 # 
-# $$x_{k+1} = A \cdot x_{k}$$
+# $$x_{k+1} = A \cdot x_{k} + B \cdot u$$
+# 
+# Hence, we have no control input $u$:
 # 
 # $$x_{k+1} = \begin{bmatrix}1 & 0 & \Delta t & 0 & \frac{1}{2}\Delta t^2 & 0 \\ 0 & 1 & 0 & \Delta t & 0 & \frac{1}{2}\Delta t^2 \\ 0 & 0 & 1 & 0 & \Delta t & 0 \\ 0 & 0 & 0 & 1 & 0 & \Delta t \\ 0 & 0 & 0 & 0 & 1 & 0  \\ 0 & 0 & 0 & 0 & 0 & 1\end{bmatrix} \cdot \begin{bmatrix} x \\ y \\ \dot x \\ \dot y \\ \ddot x \\ \ddot y\end{bmatrix}_{k}$$
 # 
@@ -49,7 +51,7 @@ from scipy.stats import norm
 x = np.matrix([[0.0, 0.0, 0.0, 0.0, 0.0, 0.0]]).T
 print(x, x.shape)
 n=x.size # States
-plt.scatter(x[0],x[1], s=100)
+plt.scatter(float(x[0]),float(x[1]), s=100)
 plt.title('Initial Location')
 
 # <headingcell level=4>
@@ -93,7 +95,7 @@ plt.colorbar(im, cax=cax)
 
 plt.tight_layout()
 
-# <headingcell level=4>
+# <headingcell level=2>
 
 # Dynamic Matrix
 
@@ -120,7 +122,7 @@ A = np.matrix([[1.0, 0.0, dt, 0.0, 1/2.0*dt**2, 0.0],
               [0.0, 0.0, 0.0, 0.0, 0.0, 1.0]])
 print(A, A.shape)
 
-# <headingcell level=4>
+# <headingcell level=2>
 
 # Measurement Matrix
 
@@ -134,7 +136,7 @@ H = np.matrix([[0.0, 0.0, 0.0, 0.0, 1.0, 0.0],
               [0.0, 0.0, 0.0, 0.0, 0.0, 1.0]])
 print(H, H.shape)
 
-# <headingcell level=4>
+# <headingcell level=2>
 
 # Measurement Noise Covariance
 
@@ -158,13 +160,13 @@ plt.title('$y$')
 
 plt.tight_layout()
 
-# <headingcell level=3>
+# <headingcell level=2>
 
 # Process Noise Covariance Matrix Q for CV Model
 
 # <markdowncell>
 
-# The Position of the car can be influenced by a force (e.g. wind), which leads to an acceleration disturbance (noise). This process noise has to be modeled with the process noise covariance matrix Q.
+# The Position of an object can be influenced by a force (e.g. wind), which leads to an acceleration disturbance (noise). This process noise has to be modeled with the process noise covariance matrix Q.
 # 
 # $$Q = \begin{bmatrix}\sigma_{x}^2 & \sigma_{xy} & \sigma_{x \dot x} & \sigma_{x \dot y} & \sigma_{x \ddot x} & \sigma_{x \ddot y} \\ \sigma_{yx} & \sigma_{y}^2 & \sigma_{y \dot x} & \sigma_{y \dot y} & \sigma_{y \ddot x} & \sigma_{y \ddot y} \\ \sigma_{\dot x x} & \sigma_{\dot x y} & \sigma_{\dot x}^2 & \sigma_{\dot x \dot y} & \sigma_{\dot x \ddot x} & \sigma_{\dot x \ddot y} \\ \sigma_{\dot y x} & \sigma_{\dot y y} & \sigma_{\dot y \dot x} & \sigma_{\dot y}^2 & \sigma_{\dot y \ddot x} & \sigma_{\dot y \ddot y} \\ \sigma_{\ddot x x} & \sigma_{\ddot x y} & \sigma_{\ddot x \dot x} & \sigma_{\ddot x \dot y} & \sigma_{\ddot x}^2 & \sigma_{\ddot x \ddot y} \\ \sigma_{\ddot y x} & \sigma_{\ddot y y} & \sigma_{\ddot y \dot x} & \sigma_{\ddot y \dot y} & \sigma_{\ddot y \ddot x} & \sigma_{\ddot y}^2\end{bmatrix}$$
 # 
@@ -172,22 +174,13 @@ plt.tight_layout()
 # 
 # One can calculate Q as
 # 
-# $$Q = G\cdot G^T \cdot \sigma_v^2$$
+# $$Q = G\cdot G^T \cdot \sigma_a^2$$
 # 
-# with $G = \begin{bmatrix}0.5dt^2 & 0.5dt^2 & dt & dt & 1.0 & 1.0\end{bmatrix}^T$ and $\sigma_v$ as the acceleration process noise, which can be assumed for a vehicle to be $8.8m/s^2$, according to: Schubert, R., Adam, C., Obst, M., Mattern, N., Leonhardt, V., & Wanielik, G. (2011). [Empirical evaluation of vehicular models for ego motion estimation](http://ieeexplore.ieee.org/xpl/articleDetails.jsp?arnumber=5940526). 2011 IEEE Intelligent Vehicles Symposium (IV), 534–539. doi:10.1109/IVS.2011.5940526
+# with $G = \begin{bmatrix}0.5dt^2 & 0.5dt^2 & dt & dt & 1.0 & 1.0\end{bmatrix}^T$ and $\sigma_a$ as the acceleration process noise.
 
-# <codecell>
+# <headingcell level=4>
 
-sa = 1.0
-G = np.matrix([[1/2.0*dt**2],
-               [1/2.0*dt**2],
-               [dt],
-               [dt],
-               [1.0],
-               [1.0]])
-Q = G*G.T*sa**2
-
-print(Q, Q.shape)
+# Symbolic Calculation
 
 # <codecell>
 
@@ -197,6 +190,19 @@ printing.init_printing()
 dts = Symbol('\Delta t')
 Qs = Matrix([[0.5*dts**2],[0.5*dts**2],[dts],[dts],[1.0],[1.0]])
 Qs*Qs.T
+
+# <codecell>
+
+sa = 0.1
+G = np.matrix([[1/2.0*dt**2],
+               [1/2.0*dt**2],
+               [dt],
+               [dt],
+               [1.0],
+               [1.0]])
+Q = G*G.T*sa**2
+
+print(Q, Q.shape)
 
 # <codecell>
 
@@ -225,7 +231,7 @@ plt.colorbar(im, cax=cax)
 
 plt.tight_layout()
 
-# <headingcell level=4>
+# <headingcell level=2>
 
 # Identity Matrix
 
@@ -238,9 +244,13 @@ print(I, I.shape)
 
 # Measurement
 
+# <markdowncell>
+
+# They are generated synthetically
+
 # <codecell>
 
-m = 500 # Measurements
+m = 100 # Measurements
 
 # Acceleration
 sa= 0.1 # Sigma for acceleration
@@ -263,6 +273,7 @@ plt.step(range(m),mx, label='$a_x$')
 plt.step(range(m),my, label='$a_y$')
 plt.ylabel('Acceleration')
 plt.title('Measurements')
+plt.ylim([-1, 1])
 plt.legend(loc='best',prop={'size':18})
 plt.savefig('Kalman-Filter-CA-Measurements.png', dpi=72, transparent=True, bbox_inches='tight')
 
@@ -296,7 +307,7 @@ Kddy=[]
 
 # <markdowncell>
 
-# ![Kalman Filter](http://www.cbcity.de/wp-content/uploads/2013/05/Kalman-Filter-Step1-770x429.png)
+# ![Kalman Filter](https://raw.github.com/balzer82/Kalman/master/Kalman-Filter-Step.png)
 
 # <codecell>
 
@@ -380,7 +391,7 @@ plt.legend(loc='best',prop={'size':22})
 
 # <codecell>
 
-fig = plt.figure(figsize=(16,4))
+fig = plt.figure(figsize=(16,9))
 plt.plot(range(len(measurements[0])),Kx, label='Kalman Gain for $x$')
 plt.plot(range(len(measurements[0])),Ky, label='Kalman Gain for $y$')
 plt.plot(range(len(measurements[0])),Kdx, label='Kalman Gain for $\dot x$')
@@ -468,15 +479,16 @@ plt.savefig('Kalman-Filter-CA-StateEstimated.png', dpi=72, transparent=True, bbo
 # <codecell>
 
 fig = plt.figure(figsize=(16,16))
-plt.scatter(xt,yt, s=20, label='State', c='k')
 plt.scatter(xt[0],yt[0], s=100, label='Start', c='g')
 plt.scatter(xt[-1],yt[-1], s=100, label='Goal', c='r')
+plt.plot(xt,yt, label='State',alpha=0.5)
 
 plt.xlabel('X')
 plt.ylabel('Y')
 plt.title('Position')
 plt.legend(loc='best')
-axis('equal')
+plt.xlim([-20, 20])
+plt.ylim([-20, 20])
 plt.savefig('Kalman-Filter-CA-Position.png', dpi=72, transparent=True, bbox_inches='tight')
 
 # <headingcell level=1>

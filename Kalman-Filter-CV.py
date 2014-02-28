@@ -48,7 +48,7 @@ from scipy.stats import norm
 
 x = np.matrix([[0.0, 0.0, 0.0, 0.0]]).T
 print(x, x.shape)
-plt.scatter(x[0],x[1], s=100)
+plt.scatter(float(x[0]),float(x[1]), s=100)
 plt.title('Initial Location')
 
 # <headingcell level=3>
@@ -275,7 +275,7 @@ Kdy= []
 
 # <markdowncell>
 
-# ![Kalman Filter](http://www.cbcity.de/wp-content/uploads/2013/05/Kalman-Filter-Step1-770x429.png)
+# ![Kalman Filter](https://raw.github.com/balzer82/Kalman/master/Kalman-Filter-Step.png)
 
 # <codecell>
 
@@ -412,6 +412,7 @@ plt.axhline(vy, color='#999999', label='$\dot y_{real}$')
 plt.xlabel('Filter Step')
 plt.title('Estimate (Elements from State Vector $x$)')
 plt.legend(loc='best',prop={'size':22})
+plt.ylim([0, 30])
 plt.ylabel('Velocity')
 
 # <headingcell level=2>
@@ -437,4 +438,5 @@ axis('equal')
 
 # <markdowncell>
 
+# It works pretty well.
 
