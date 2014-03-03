@@ -12,7 +12,7 @@ printing.init_printing()
 
 # <headingcell level=1>
 
-# Kalman Filter Implementation for Constant Turn Rate and Velocity (CTRV) Vehicle Model in Python
+# Extended Kalman Filter Implementation for Constant Turn Rate and Velocity (CTRV) Vehicle Model in Python
 
 # <markdowncell>
 
@@ -163,7 +163,7 @@ Gs
 
 # <markdowncell>
 
-# Matrix Q is the expected noise on the control.
+# Matrix Q is the expected noise on the State.
 # 
 # One method is based on the interpretation of the matrix as the weight of the dynamics prediction from the state equations
 # Q relative to the measurements.

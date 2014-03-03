@@ -32,7 +32,7 @@ Here the Measurement Covariance Matrix R is calculated dynamically via the maxim
 
 # Extended Kalman Filter
 
-![EKF Filter Step](https://raw.github.com/balzer82/Kalman/master/Extended-Kalman-Filter-Step.jpg)
+![EKF Filter Step](https://raw.github.com/balzer82/Kalman/master/Extended-Kalman-Filter-Step.png)
 
 ## Extended Kalman Filter with Constant Turn Rate and Velocity (CTRV) Model
 
