@@ -24,7 +24,7 @@ printing.init_printing()
 
 # <markdowncell>
 
-# Constant Turn Rate, Constant Velocity Model for a vehicle ![CTRV Model](https://raw.github.com/balzer82/Kalman/master/CVCT-Model.png)
+# Constant Turn Rate, Constant Velocity Model for a vehicle ![CTRV Model](https://raw.github.com/balzer82/Kalman/master/CTRV-Model.png)
 # 
 # $$x_k= \left[ \matrix{ x \\ y \\ \psi \\ v \\ \dot\psi} \right] = \left[ \matrix{ \text{Position X} \\ \text{Position Y} \\ \text{Heading} \\ \text{Velocity} \\ \text{Yaw Rate}} \right]$$
 
@@ -49,7 +49,7 @@ state = Matrix([xs,ys,psis,vs,dpsis])
 
 # <codecell>
 
-x = np.matrix([[0.0, 0.0, -0.2, 10.0, 0.001]]).T
+x = np.matrix([[0.0, 0.0, np.pi/2, 0.1, 0.001]]).T
 print(x, x.shape)
 
 numstates=x.size # States
@@ -58,7 +58,7 @@ U=float(np.cos(x[2])*x[3])
 V=float(np.sin(x[2])*x[3])
 
 plt.quiver(x[0], x[1], U, V)
-plt.scatter(x[0], x[1], s=100)
+plt.scatter(float(x[0]), float(x[1]), s=100)
 plt.title('Initial Location')
 plt.axis('equal')
 
@@ -176,8 +176,8 @@ control
 
 # <codecell>
 
-svQ = 0.05**2
-syQ = 0.001**2
+svQ = 1.5**2
+syQ = 0.29**2
 
 Q = np.matrix([[svQ, 0.0],
                [0.0, syQ]])
@@ -222,7 +222,7 @@ plt.tight_layout()
 
 # <codecell>
 
-sp = 60.0**2
+sp = 6.0**2
 R = np.matrix([[sp, 0.0],
                [0.0, sp]])
 
@@ -323,7 +323,7 @@ GPS[0]=True
 
 # <codecell>
 
-my[200:300]+=5.0 # Static Drift
+my[200:300]+=2.0 # Static Drift
 
 # <codecell>
 
@@ -350,12 +350,12 @@ print(measurements.shape)
 # <codecell>
 
 # Preallocation for Plotting
-xt = []
-yt = []
-dxt= []
-dyt= []
-ddxt=[]
-ddyt=[]
+x0 = []
+x1 = []
+x2 = []
+x3 = []
+x4 = []
+x5 = []
 Zx = []
 Zy = []
 Px = []
@@ -406,8 +406,8 @@ for filterstep in range(m):
     x[0] = x[0] + (vt/yat) * (np.sin(yat*dt+x[2]) - np.sin(x[2]))
     x[1] = x[1] + (vt/yat) * (-np.cos(yat*dt+x[2])+ np.cos(x[2]))
     x[2] = (x[2] + yat*dt + np.pi) % (2.0*np.pi) - np.pi
-    x[3] = vt   # this is the "control", actually a measurement, which drives the state
-    x[4] = yat  # this is the "control", actually a measurement, which drives the state
+    x[3] = vt
+    x[4] = yat
     
     # Calculate the Jacobian of the Dynamic Matrix A
     # see "Calculate the Jacobian of the Dynamic Matrix with respect to the state vector"
@@ -469,11 +469,11 @@ for filterstep in range(m):
     
 
     # Save states for Plotting
-    xt.append(float(x[0]))
-    yt.append(float(x[1]))
-    dxt.append(float(x[2]))
-    dyt.append(float(x[3]))
-    ddxt.append(float(x[4]))
+    x0.append(float(x[0]))
+    x1.append(float(x[1]))
+    x2.append(float(x[2]))
+    x3.append(float(x[3]))
+    x4.append(float(x[4]))
     Zx.append(float(Z[0]))
     Zy.append(float(Z[1]))    
     Px.append(float(P[0,0]))
@@ -565,28 +565,28 @@ plt.legend(prop={'size':18})
 fig = plt.figure(figsize=(16,16))
 
 plt.subplot(411)
-plt.step(range(len(measurements[0])),xt, label='$x$')
-plt.step(range(len(measurements[0])),yt, label='$y$')
+plt.step(range(len(measurements[0])),x0, label='$x$')
+plt.step(range(len(measurements[0])),x1, label='$y$')
 
-plt.title('Estimate (Elements from State Vector $x$)')
+plt.title('Extended Kalman Filter State Estimates (State Vector $x$)')
 plt.legend(loc='best',prop={'size':22})
 plt.ylabel('Position')
 
 plt.subplot(412)
-plt.step(range(len(measurements[0])),dxt, label='$\psi$')
+plt.step(range(len(measurements[0])),x2, label='$\psi$')
 plt.step(range(len(measurements[0])),course/180.0*np.pi, label='$\psi$ (from GPS as reference)')
 plt.ylabel('Course')
 plt.legend(loc='best',prop={'size':16})
            
 plt.subplot(413)
-plt.step(range(len(measurements[0])),dyt, label='$v$')
+plt.step(range(len(measurements[0])),x3, label='$v$')
 plt.step(range(len(measurements[0])),speed/3.6, label='$v$ (from GPS as reference)')
 plt.ylabel('Velocity')
 plt.ylim([0, 30])
 plt.legend(loc='best',prop={'size':16})
 
 plt.subplot(414)
-plt.step(range(len(measurements[0])),ddxt, label='$\dot \psi$')
+plt.step(range(len(measurements[0])),x4, label='$\dot \psi$')
 plt.step(range(len(measurements[0])),yawrate/180.0*np.pi, label='$\dot \psi$ (from IMU as reference)')
 plt.ylabel('Yaw Rate')
 plt.ylim([-0.6, 0.6])
@@ -605,17 +605,25 @@ plt.savefig('Extended-Kalman-Filter-CTRV-State-Estimates.png', dpi=72, transpare
 # <codecell>
 
 fig = plt.figure(figsize=(16,16))
-plt.plot(xt,yt,label='EKF Position', c='k')
-plt.scatter(mx[::5],my[::5], s=50, label='GPS Position', c='b')
-plt.scatter(xt[0],yt[0], s=100, label='Start', c='g')
-plt.scatter(xt[-1],yt[-1], s=100, label='Goal', c='r')
 
-plt.xlabel('X')
-plt.ylabel('Y')
+# EKF State
+plt.quiver(x0,x1,np.cos(x2), np.sin(x2), color='#94C600', width=0.001)
+plt.scatter(x0,x1, s=30, c='#FF6700',  label='EKF Position')
+
+# Measurements
+plt.scatter(mx[::5],my[::5], s=50, label='GPS Measurements', c='#3E3D2D', alpha=0.5)
+plt.scatter(x0[0],x1[0], s=100, label='Start', c='g')
+plt.scatter(x0[-1],x1[-1], s=100, label='Goal', c='r')
+
+plt.xlabel('X [m]')
+plt.ylabel('Y [m]')
 plt.title('Position')
 plt.legend(loc='best')
 axis('equal')
 plt.savefig('Extended-Kalman-Filter-CTRV-Position.png', dpi=72, transparent=True, bbox_inches='tight')
+
+# <codecell>
+
 
 # <headingcell level=1>
 
