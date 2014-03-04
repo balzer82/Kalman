@@ -168,7 +168,7 @@ Gs
 # One method is based on the interpretation of the matrix as the weight of the dynamics prediction from the state equations
 # Q relative to the measurements.
 # 
-# One can assume the velocity process noise for a vehicle with $\sigma_v=1.5m/s$ and the yaw rate process noise with $\sigma_\psi=0.29rad/s$, when a timestep takes 0.02s (50Hz).
+# As you can see in [Schubert, R., Adam, C., Obst, M., Mattern, N., Leonhardt, V., & Wanielik, G. (2011). Empirical evaluation of vehicular models for ego motion estimation. 2011 IEEE Intelligent Vehicles Symposium (IV), 534–539. doi:10.1109/IVS.2011.5940526] one can assume the velocity process noise for a vehicle with $\sigma_v=1.5m/s$ and the yaw rate process noise with $\sigma_\psi=0.29rad/s$, when a timestep takes 0.02s (50Hz).
 
 # <codecell>
 
@@ -219,6 +219,8 @@ plt.tight_layout()
 # <markdowncell>
 
 # "In practical use, the uncertainty estimates take on the significance of relative weights of state estimates and measurements. So it is not so much important that uncertainty is absolutely correct as it is that it be relatively consistent across all models" - Kelly, A. (1994). A 3D state space formulation of a navigation Kalman filter for autonomous vehicles, (May). Retrieved from http://oai.dtic.mil/oai/oai?verb=getRecord&metadataPrefix=html&identifier=ADA282853
+# 
+# [Schubert, R., Adam, C., Obst, M., Mattern, N., Leonhardt, V., & Wanielik, G. (2011). Empirical evaluation of vehicular models for ego motion estimation. 2011 IEEE Intelligent Vehicles Symposium (IV), 534–539. doi:10.1109/IVS.2011.5940526] pointed out a $\sigma_p=6.0m$ can be assumed.
 
 # <codecell>
 
@@ -379,7 +381,7 @@ Z = np.matrix([[0.0],[0.0],[0.0]])
 
 # <markdowncell>
 
-# ![Extended Kalman Filter Step](https://raw.github.com/balzer82/Kalman/master/Extended-Kalman-Filter-Step.jpg)
+# ![Extended Kalman Filter Step](https://raw.github.com/balzer82/Kalman/master/Extended-Kalman-Filter-Step.png)
 
 # <markdowncell>
 
