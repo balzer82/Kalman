@@ -649,7 +649,7 @@ plt.savefig('Extended-Kalman-Filter-CTRV-State-Estimates.png', dpi=72, transpare
 fig = plt.figure(figsize=(16,9))
 
 # EKF State
-plt.quiver(x0,x1,np.cos(x2), np.sin(x2), color='#94C600', units='xy', width=0.05, scale=0.5)
+plt.quiver(x0,x1,np.cos(x2), np.sin(x2), color='#94C600', units='xy', width=0.01, scale=0.5)
 plt.scatter(x0,x1, c=dstate, s=30, label='EKF Position')
 
 # Measurements
@@ -762,13 +762,13 @@ gps.newgxcoord((car["gps"][::5]))
 # Style of the Track
 trk.iconstyle.icon.href = ""
 trk.labelstyle.scale = 1
-trk.linestyle.width = 4
-trk.linestyle.color = '7fff0000'
+trk.linestyle.width = 10
+trk.linestyle.color = '7f00ff00' # aabbggrr
 
 gps.iconstyle.icon.href = ""
 gps.labelstyle.scale = 0
-gps.linestyle.width = 3
-gps.linestyle.color = '7fffffff'
+gps.linestyle.width = 4
+gps.linestyle.color = '7fff0000'
 
 
 # Saving
