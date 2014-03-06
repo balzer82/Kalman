@@ -56,6 +56,4 @@ The Trajectory is exportet to .kmz, which one can look at with Google Earth.
 
 `white`=GPS Position, `blue`=Extended Kalman Filter Position
 
-[Take a look at the trajectory on Google Maps](https://maps.google.com/maps?q=https://github.com/balzer82/Kalman/blob/master/Extended-Kalman-Filter-CTRV-Adaptive.kmz?raw=true)
-
 ####[View IPython Notebook](http://nbviewer.ipython.org/github/balzer82/Kalman/blob/master/Extended-Kalman-Filter-CTRV-Adaptive.ipynb?create=1)
