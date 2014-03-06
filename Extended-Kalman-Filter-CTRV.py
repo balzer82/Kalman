@@ -4,11 +4,13 @@
 # <codecell>
 
 import numpy as np
+import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
 from scipy.stats import norm
 from sympy import Symbol, symbols, Matrix, sin, cos
 from sympy.interactive import printing
 printing.init_printing()
+%pylab inline --no-import-all
 
 # <headingcell level=1>
 
@@ -28,13 +30,21 @@ printing.init_printing()
 # 
 # $$x_k= \left[ \matrix{ x \\ y \\ \psi \\ v \\ \dot\psi} \right] = \left[ \matrix{ \text{Position X} \\ \text{Position Y} \\ \text{Heading} \\ \text{Velocity} \\ \text{Yaw Rate}} \right]$$
 
+# <codecell>
+
+numstates=5 # States
+
+# <codecell>
+
+dt = 1.0/50.0 # Sample Rate of the Measurements is 50Hz
+
 # <markdowncell>
 
 # All symbolic calculations are made with [Sympy](http://nbviewer.ipython.org/github/jrjohansson/scientific-python-lectures/blob/master/Lecture-5-Sympy.ipynb). Thanks!
 
 # <codecell>
 
-vs, psis, dpsis, dts, xs, ys = symbols('v \psi \dot\psi T x y')
+vs, psis, dpsis, dts, xs, ys, lats, lons = symbols('v \psi \dot\psi T x y lat lon')
 
 As = Matrix([[xs+(vs/dpsis)*(sin(psis+dpsis*dts)-sin(psis))],
              [ys+(vs/dpsis)*(-cos(psis+dpsis*dts)+cos(psis))],
@@ -42,25 +52,6 @@ As = Matrix([[xs+(vs/dpsis)*(sin(psis+dpsis*dts)-sin(psis))],
              [vs],
              [dpsis]])
 state = Matrix([xs,ys,psis,vs,dpsis])
-
-# <headingcell level=2>
-
-# Initial State
-
-# <codecell>
-
-x = np.matrix([[0.0, 0.0, np.pi/2, 0.1, 0.001]]).T
-print(x, x.shape)
-
-numstates=x.size # States
-
-U=float(np.cos(x[2])*x[3])
-V=float(np.sin(x[2])*x[3])
-
-plt.quiver(x[0], x[1], U, V)
-plt.scatter(float(x[0]), float(x[1]), s=100)
-plt.title('Initial Location')
-plt.axis('equal')
 
 # <headingcell level=2>
 
@@ -75,21 +66,20 @@ plt.axis('equal')
 P = np.diag([1000.0, 1000.0, 1000.0, 1000.0, 1000.0])
 print(P, P.shape)
 
-
 fig = plt.figure(figsize=(6, 6))
 im = plt.imshow(P, interpolation="none", cmap=plt.get_cmap('binary'))
 plt.title('Initial Covariance Matrix $P$')
-ylocs, ylabels = yticks()
+ylocs, ylabels = plt.yticks()
 # set the locations of the yticks
-yticks(arange(6))
+plt.yticks(np.arange(6))
 # set the locations and labels of the yticks
-yticks(arange(5),('$x$', '$y$', '$\psi$', '$v$', '$\dot \psi$'), fontsize=22)
+plt.yticks(np.arange(5),('$x$', '$y$', '$\psi$', '$v$', '$\dot \psi$'), fontsize=22)
 
-xlocs, xlabels = xticks()
+xlocs, xlabels = plt.xticks()
 # set the locations of the yticks
-xticks(arange(6))
+plt.xticks(np.arange(6))
 # set the locations and labels of the yticks
-xticks(arange(5),('$x$', '$y$', '$\psi$', '$v$', '$\dot \psi$'), fontsize=22)
+plt.xticks(np.arange(5),('$x$', '$y$', '$\psi$', '$v$', '$\dot \psi$'), fontsize=22)
 
 plt.xlim([-0.5,4.5])
 plt.ylim([4.5, -0.5])
@@ -176,8 +166,8 @@ control
 
 # <codecell>
 
-svQ = 1.5**2
-syQ = 0.29**2
+svQ = (1.5*dt)**2
+syQ = (0.29*dt)**2
 
 Q = np.matrix([[svQ, 0.0],
                [0.0, syQ]])
@@ -189,17 +179,17 @@ print(Q, Q.shape)
 fig = plt.figure(figsize=(4, 4))
 im = plt.imshow(Q, interpolation="none", cmap=plt.get_cmap('binary'))
 plt.title('Process Noise Covariance Matrix $Q$')
-ylocs, ylabels = yticks()
+ylocs, ylabels = plt.yticks()
 # set the locations of the yticks
-yticks(arange(3))
+plt.yticks(np.arange(3))
 # set the locations and labels of the yticks
-yticks(arange(2),('$v$', '$\dot \psi$'), fontsize=22)
+plt.yticks(np.arange(2),('$v$', '$\dot \psi$'), fontsize=22)
 
-xlocs, xlabels = xticks()
+xlocs, xlabels = plt.xticks()
 # set the locations of the yticks
-xticks(arange(3))
+plt.xticks(np.arange(3))
 # set the locations and labels of the yticks
-xticks(arange(2),('$v$', '$\dot \psi$'), fontsize=22)
+plt.xticks(np.arange(2),('$v$', '$\dot \psi$'), fontsize=22)
 
 plt.xlim([-0.5,1.5])
 plt.ylim([1.5, -0.5])
@@ -214,13 +204,57 @@ plt.tight_layout()
 
 # <headingcell level=2>
 
-# Measurement Noise Covariance R
+# Real Measurements
+
+# <codecell>
+
+#path = './../RaspberryPi-CarPC/TinkerDataLogger/DataLogs/2014/'
+datafile = '2014-02-14-002-Data.csv'
+
+date, \
+time, \
+millis, \
+ax, \
+ay, \
+az, \
+rollrate, \
+pitchrate, \
+yawrate, \
+roll, \
+pitch, \
+yaw, \
+speed, \
+course, \
+latitude, \
+longitude, \
+altitude, \
+pdop, \
+hdop, \
+vdop, \
+epe, \
+fix, \
+satellites_view, \
+satellites_used, \
+temp = np.loadtxt(datafile, delimiter=',', unpack=True, 
+                  converters={1: mdates.strpdate2num('%H%M%S%f'),
+                              0: mdates.strpdate2num('%y%m%d')},
+                  skiprows=1)
+
+print('Read \'%s\' successfully.' % datafile)
+
+# A course of 0° means the Car is traveling north bound
+# and 90° means it is traveling east bound.
+# In the Calculation following, East is Zero and North is 90°
+# We need an offset.
+course =(-course+90.0)
+
+# <headingcell level=2>
+
+# Measurement Noise Covariance R (Adaptive)
 
 # <markdowncell>
 
 # "In practical use, the uncertainty estimates take on the significance of relative weights of state estimates and measurements. So it is not so much important that uncertainty is absolutely correct as it is that it be relatively consistent across all models" - Kelly, A. (1994). A 3D state space formulation of a navigation Kalman filter for autonomous vehicles, (May). Retrieved from http://oai.dtic.mil/oai/oai?verb=getRecord&metadataPrefix=html&identifier=ADA282853
-# 
-# [Schubert, R., Adam, C., Obst, M., Mattern, N., Leonhardt, V., & Wanielik, G. (2011). Empirical evaluation of vehicular models for ego motion estimation. 2011 IEEE Intelligent Vehicles Symposium (IV), 534–539. doi:10.1109/IVS.2011.5940526] pointed out a $\sigma_p=6.0m$ can be assumed.
 
 # <codecell>
 
@@ -254,49 +288,6 @@ Hs
 I = np.eye(numstates)
 print(I, I.shape)
 
-# <headingcell level=2>
-
-# Real Measurements
-
-# <codecell>
-
-datafile = '2014-02-14-002-Data.csv'
-
-date, \
-time, \
-millis, \
-ax, \
-ay, \
-az, \
-rollrate, \
-pitchrate, \
-yawrate, \
-roll, \
-pitch, \
-yaw, \
-speed, \
-course, \
-latitude, \
-longitude, \
-altitude, \
-pdop, \
-hdop, \
-vdop, \
-epe, \
-fix, \
-satellites_view, \
-satellites_used, \
-temp = np.loadtxt(datafile, delimiter=',', unpack=True, 
-                  converters={1: strpdate2num('%H%M%S%f'),
-                              0: strpdate2num('%d%m%y')},
-                  skiprows=1000)
-
-# A course of 0° means the Car is traveling north bound
-# and 90° means it is traveling east bound.
-# In the Calculation following, East is Zero and North is 90°
-# We need an offset.
-course =(-course+90.0)
-
 # <codecell>
 
 
@@ -306,18 +297,33 @@ course =(-course+90.0)
 
 # <codecell>
 
-dt = 1.0/50.0 # Sample Rate of the Measurements is 50Hz
+arc = 111323.872 # m/°
 
-Px = 111.32 * np.cos(latitude*np.pi/180.0) * longitude # in km
-Py = 111.32 * latitude # in km
-dx = np.hstack((0.0, np.diff(1000.0*Px)))# in m
-dy = np.hstack((0.0, np.diff(1000.0*Py)))# in m
+dx = arc * np.cos(latitude*np.pi/180.0) * np.hstack((0.0, np.diff(longitude))) # in m
+dy = arc * np.hstack((0.0, np.diff(latitude))) # in m
 
 mx = np.cumsum(dx)
 my = np.cumsum(dy)
 
-GPS=(np.abs(dy)>0.0).astype('bool') # GPS Trigger for Kalman Filter
+GPS=(np.abs(my)>0.0).astype('bool') # GPS Trigger for Kalman Filter
 GPS[0]=True
+
+# <headingcell level=2>
+
+# Initial State
+
+# <codecell>
+
+x = np.matrix([[mx[0], my[0], course[0]/180.0*np.pi, speed[0]/3.6+0.001, yawrate[0]/180.0*np.pi]]).T
+print(x, x.shape)
+
+U=float(np.cos(x[2])*x[3])
+V=float(np.sin(x[2])*x[3])
+
+plt.quiver(x[0], x[1], U, V)
+plt.scatter(float(x[0]), float(x[1]), s=100)
+plt.title('Initial Location')
+plt.axis('equal')
 
 # <headingcell level=3>
 
@@ -325,7 +331,7 @@ GPS[0]=True
 
 # <codecell>
 
-my[200:300]+=2.0 # Static Drift
+#my[200:300]+=2.0 # Static Drift
 
 # <codecell>
 
@@ -333,8 +339,8 @@ fig = plt.figure(figsize=(9,9))
 plt.scatter(mx,my, s=20, label='GPS Position', c='k')
 plt.scatter(mx[0],my[0], s=100, label='Start', c='g')
 plt.scatter(mx[-1],my[-1], s=100, label='Goal', c='r')
-plt.xlabel('m')
-plt.ylabel('m')
+plt.xlabel('E [m]')
+plt.ylabel('N [m]')
 plt.axis('equal')
 plt.legend(loc='best')
 
@@ -371,7 +377,7 @@ Ky = []
 Kdx= []
 Kdy= []
 Kddx=[]
-Kddy=[]
+dstate=[]
 K = np.matrix([[0.0], [0.0], [0.0], [0.0], [0.0]])
 Z = np.matrix([[0.0],[0.0],[0.0]])
 
@@ -397,19 +403,28 @@ for filterstep in range(m):
     vt=speed[filterstep]/3.6
     yat=yawrate[filterstep]/180.0*np.pi
     
-    if np.abs(yat)<0.00001: # avoid numerical issues (dividing by 0)
-            yat=0.0001    
-
+    if vt<0.2: # clamp speed and yawrate to zero while standing still
+        vt=0.0
+        yat=0.0
     
     # Time Update (Prediction)
     # ========================
     # Project the state ahead
     # see "Dynamic Matrix"
-    x[0] = x[0] + (vt/yat) * (np.sin(yat*dt+x[2]) - np.sin(x[2]))
-    x[1] = x[1] + (vt/yat) * (-np.cos(yat*dt+x[2])+ np.cos(x[2]))
-    x[2] = (x[2] + yat*dt + np.pi) % (2.0*np.pi) - np.pi
-    x[3] = vt
-    x[4] = yat
+    if np.abs(yat)<0.0001: # Driving straight
+        x[0] = x[0] + vt*dt * np.cos(x[2])
+        x[1] = x[1] + vt*dt * np.sin(x[2])
+        x[2] = x[2]
+        x[3] = vt
+        x[4] = 0.0000001 # avoid numerical issues in Jacobians
+        dstate.append(0)
+    else: # otherwise
+        x[0] = x[0] + (vt/yat) * (np.sin(yat*dt+x[2]) - np.sin(x[2]))
+        x[1] = x[1] + (vt/yat) * (-np.cos(yat*dt+x[2])+ np.cos(x[2]))
+        x[2] = (x[2] + yat*dt + np.pi) % (2.0*np.pi) - np.pi
+        x[3] = vt
+        x[4] = yat
+        dstate.append(1)
     
     # Calculate the Jacobian of the Dynamic Matrix A
     # see "Calculate the Jacobian of the Dynamic Matrix with respect to the state vector"
@@ -449,15 +464,15 @@ for filterstep in range(m):
         # ===============================
         
         # Measurement Function
-        hx = np.matrix([[float(1.0*x[0])],
-                        [float(1.0*x[1])]])
+        hx = np.matrix([[float(x[0])],
+                        [float(x[1])]])
         
         # Calculate the Jacobian of the Measurement Function
         # see "Measurement Matrix H"
         H = np.matrix([[1.0, 0.0, 0.0, 0.0, 0.0],
                        [0.0, 1.0, 0.0, 0.0, 0.0]])
         
-        
+       
         S = H*P*H.T + R
         K = (P*H.T) * np.linalg.inv(S)
     
@@ -500,7 +515,7 @@ for filterstep in range(m):
 # <codecell>
 
 fig = plt.figure(figsize=(16,9))
-plt.step(range(m),Px, label='$x$')
+plt.semilogy(range(m),Px, label='$x$')
 plt.step(range(m),Py, label='$y$')
 plt.step(range(m),Pdx, label='$\psi$')
 plt.step(range(m),Pdy, label='$v$')
@@ -516,17 +531,17 @@ plt.legend(loc='best',prop={'size':22})
 fig = plt.figure(figsize=(6, 6))
 im = plt.imshow(P, interpolation="none", cmap=plt.get_cmap('binary'))
 plt.title('Covariance Matrix $P$ (after %i Filter Steps)' % (m))
-ylocs, ylabels = yticks()
+ylocs, ylabels = plt.yticks()
 # set the locations of the yticks
-yticks(arange(6))
+plt.yticks(np.arange(6))
 # set the locations and labels of the yticks
-yticks(arange(5),('$x$', '$y$', '$\psi$', '$v$', '$\dot \psi$'), fontsize=22)
+plt.yticks(np.arange(5),('$x$', '$y$', '$\psi$', '$v$', '$\dot \psi$'), fontsize=22)
 
-xlocs, xlabels = xticks()
+xlocs, xlabels = plt.xticks()
 # set the locations of the yticks
-xticks(arange(6))
+plt.xticks(np.arange(6))
 # set the locations and labels of the yticks
-xticks(arange(5),('$x$', '$y$', '$\psi$', '$v$', '$\dot \psi$'), fontsize=22)
+plt.xticks(np.arange(5),('$x$', '$y$', '$\psi$', '$v$', '$\dot \psi$'), fontsize=22)
 
 plt.xlim([-0.5,4.5])
 plt.ylim([4.5, -0.5])
@@ -557,6 +572,7 @@ plt.xlabel('Filter Step')
 plt.ylabel('')
 plt.title('Kalman Gain (the lower, the more the measurement fullfill the prediction)')
 plt.legend(prop={'size':18})
+plt.ylim([-0.5,0.5])
 
 # <headingcell level=2>
 
@@ -567,16 +583,16 @@ plt.legend(prop={'size':18})
 fig = plt.figure(figsize=(16,16))
 
 plt.subplot(411)
-plt.step(range(len(measurements[0])),x0, label='$x$')
-plt.step(range(len(measurements[0])),x1, label='$y$')
+plt.step(range(len(measurements[0])),x0-mx[0], label='$x$')
+plt.step(range(len(measurements[0])),x1-my[0], label='$y$')
 
 plt.title('Extended Kalman Filter State Estimates (State Vector $x$)')
 plt.legend(loc='best',prop={'size':22})
-plt.ylabel('Position')
+plt.ylabel('Position (relative to start) [m]')
 
 plt.subplot(412)
 plt.step(range(len(measurements[0])),x2, label='$\psi$')
-plt.step(range(len(measurements[0])),course/180.0*np.pi, label='$\psi$ (from GPS as reference)')
+plt.step(range(len(measurements[0])),(course/180.0*np.pi+np.pi)%(2.0*np.pi) - np.pi, label='$\psi$ (from GPS as reference)')
 plt.ylabel('Course')
 plt.legend(loc='best',prop={'size':16})
            
@@ -606,26 +622,39 @@ plt.savefig('Extended-Kalman-Filter-CTRV-State-Estimates.png', dpi=72, transpare
 
 # <codecell>
 
-fig = plt.figure(figsize=(16,16))
+%pylab --no-import-all
+
+# <codecell>
+
+fig = plt.figure(figsize=(16,9))
 
 # EKF State
-plt.quiver(x0,x1,np.cos(x2), np.sin(x2), color='#94C600', width=0.001)
-plt.scatter(x0,x1, s=30, c='#FF6700',  label='EKF Position')
+plt.quiver(x0,x1,np.cos(x2), np.sin(x2), color='#94C600', units='xy', width=0.05, scale=0.5)
+plt.scatter(x0,x1, c=dstate, s=30, label='EKF Position')
 
 # Measurements
-plt.scatter(mx[::5],my[::5], s=50, label='GPS Measurements', c='#3E3D2D', alpha=0.5)
-plt.scatter(x0[0],x1[0], s=100, label='Start', c='g')
-plt.scatter(x0[-1],x1[-1], s=100, label='Goal', c='r')
+plt.scatter(mx[::5],my[::5], s=50, label='GPS Measurements', c=epe[::5], cmap='autumn_r')
+cbar=plt.colorbar(ticks=np.arange(20))
+cbar.ax.set_ylabel(u'EPE', rotation=270)
+cbar.ax.set_xlabel(u'm')
+
+# Start/Goal
+plt.scatter(x0[0],x1[0], s=60, label='Start', c='g')
+plt.scatter(x0[-1],x1[-1], s=60, label='Goal', c='r')
 
 plt.xlabel('X [m]')
 plt.ylabel('Y [m]')
 plt.title('Position')
-plt.legend(loc='best')
-axis('equal')
-plt.savefig('Extended-Kalman-Filter-CTRV-Position.png', dpi=72, transparent=True, bbox_inches='tight')
+#plt.legend(loc='best')
+plt.axis('equal')
+#plt.tight_layout()
+
+plt.show()
+#plt.savefig('Extended-Kalman-Filter-CTRV-Position.png', dpi=72, transparent=True, bbox_inches='tight')
 
 # <codecell>
 
+print('Done.')
 
 # <headingcell level=1>
 
@@ -634,4 +663,106 @@ plt.savefig('Extended-Kalman-Filter-CTRV-Position.png', dpi=72, transparent=True
 # <markdowncell>
 
 # As you can see, complicated analytic calculation of the Jacobian Matrices, but it works pretty well.
+
+# <headingcell level=2>
+
+# Write Google Earth KML
+
+# <headingcell level=3>
+
+# Convert back from Meters to Lat/Lon (WGS84)
+
+# <codecell>
+
+latekf = latitude[0] + np.divide(x1,arc)
+lonekf = longitude[0]+ np.divide(x0,np.multiply(arc,np.cos(latitude*np.pi/180.0)))
+
+# <headingcell level=3>
+
+# Create Data for KML Path
+
+# <markdowncell>
+
+# Coordinates and timestamps to be used to locate the car model in time and space
+# The value can be expressed as yyyy-mm-ddThh:mm:sszzzzzz, where T is the separator between the date and the time, and the time zone is either Z (for UTC) or zzzzzz, which represents ±hh:mm in relation to UTC.
+
+# <codecell>
+
+import datetime
+car={}
+car['when']=[]
+car['coord']=[]
+car['gps']=[]
+for i in range(len(millis)):
+    d=datetime.datetime.fromtimestamp(millis[i]/1000.0)
+    car["when"].append(d.strftime("%Y-%m-%dT%H:%M:%SZ"))
+    car["coord"].append((lonekf[i], latekf[i], 0))
+    car["gps"].append((longitude[i], latitude[i], 0))
+
+# <codecell>
+
+from simplekml import Kml, Model, AltitudeMode, Orientation, Scale
+
+# <codecell>
+
+# The model path and scale variables
+car_dae = r'http://simplekml.googlecode.com/hg/samples/resources/car-model.dae'
+car_scale = 1.0
+
+# Create the KML document
+kml = Kml(name=d.strftime("%Y-%m-%d %H:%M"), open=1)
+
+# Create the model
+model_car = Model(altitudemode=AltitudeMode.clamptoground,
+                            orientation=Orientation(heading=75.0),
+                            scale=Scale(x=car_scale, y=car_scale, z=car_scale))
+
+# Create the track
+trk = kml.newgxtrack(name="EKF", altitudemode=AltitudeMode.clamptoground,
+                     description="State Estimation from Extended Kalman Filter with CTRV Model")
+gps = kml.newgxtrack(name="GPS", altitudemode=AltitudeMode.clamptoground,
+                     description="Original GPS Measurements")
+
+# Attach the model to the track
+trk.model = model_car
+gps.model = model_car
+
+trk.model.link.href = car_dae
+gps.model.link.href = car_dae
+
+# Add all the information to the track
+trk.newwhen(car["when"])
+trk.newgxcoord(car["coord"])
+
+gps.newwhen(car["when"][::5])
+gps.newgxcoord((car["gps"][::5]))
+
+# Style of the Track
+trk.iconstyle.icon.href = ""
+trk.labelstyle.scale = 1
+trk.linestyle.width = 4
+trk.linestyle.color = '7fff0000'
+
+gps.iconstyle.icon.href = ""
+gps.labelstyle.scale = 0
+gps.linestyle.width = 3
+gps.linestyle.color = '7fffffff'
+
+
+# Saving
+#kml.save("Extended-Kalman-Filter-CTRV.kml")
+kml.savekmz("Extended-Kalman-Filter-CTRV.kmz")
+
+# <codecell>
+
+print('Exported KMZ File for Google Earth')
+
+# <codecell>
+
+
+# <codecell>
+
+
+# <codecell>
+
 

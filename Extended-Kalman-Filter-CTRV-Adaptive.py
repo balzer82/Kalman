@@ -773,7 +773,7 @@ gps.linestyle.color = '7fffffff'
 
 # Saving
 #kml.save("Extended-Kalman-Filter-CTRV.kml")
-kml.savekmz("Extended-Kalman-Filter-CTRV.kmz")
+kml.savekmz("Extended-Kalman-Filter-CTRV-Adaptive.kmz")
 
 # <codecell>
 
