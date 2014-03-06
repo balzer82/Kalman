@@ -96,12 +96,31 @@ Situation covered: You have an acceleration sensor (in 2D: x¨ and y¨) and a Po
 <h4>
 <a name="view-ipython-notebook-4" class="anchor" href="#view-ipython-notebook-4"><span class="octicon octicon-link"></span></a><a href="http://nbviewer.ipython.org/github/balzer82/Kalman/blob/master/Extended-Kalman-Filter-CTRV.ipynb?create=1">View IPython Notebook</a>
 </h4>
+
+<h2>
+<a name="adaptive-extended-kalman-filter-with-constant-turn-rate-and-velocity-ctrv-model" class="anchor" href="#adaptive-extended-kalman-filter-with-constant-turn-rate-and-velocity-ctrv-model"><span class="octicon octicon-link"></span></a>Adaptive Extended Kalman Filter with Constant Turn Rate and Velocity (CTRV) Model</h2>
+
+<p>Situation covered: You have an velocity sensor which measures the vehicle speed (v) in heading direction (ψ) and a yaw rate sensor (ψ˙) which both have to fused with the position (x &amp; y) from a GPS sensor.</p>
+
+<p>Because of poor GPS signal quality, the position measurement is pretty inaccurate. Especially, when the car is standing still, the position is jumping. Therefore an adaptive Extended Kalman Filter is used here. It calculates the measurement noise covariance <code>R</code> in every filterstep depending on the <code>speed</code> and <code>EPE</code> (Estimated Position Error from GPS).</p>
+
+<p><img src="https://raw.github.com/balzer82/Kalman/master/Extended-Kalman-Filter-CTRV-Adaptive-R.png" alt="Adaptively calculated R"></p>
+
+<p>The Trajectory is exportet to .kmz, which one can look at with Google Earth.</p>
+
+<p><img src="https://raw.github.com/balzer82/Kalman/master/Extended-Kalman-Filter-CTRV-Adaptive-Kurve.jpg" alt="Google Earth Screenshot"></p>
+
+<p><code>white</code>=GPS Position, <code>blue</code>=Extended Kalman Filter Position</p>
+
+<h4>
+<a name="view-ipython-notebook-5" class="anchor" href="#view-ipython-notebook-5"><span class="octicon octicon-link"></span></a><a href="http://nbviewer.ipython.org/github/balzer82/Kalman/blob/master/Extended-Kalman-Filter-CTRV-Adaptive.ipynb?create=1">View IPython Notebook</a>
+</h4>
         </article>
       </div>
     </div>
     <footer>
       <div class="owner">
-      <p><a href="https://github.com/balzer82" class="avatar"><img src="https://avatars.githubusercontent.com/u/3329893" width="48" height="48"/></a> <a href="https://github.com/balzer82">balzer82</a> maintains <a href="https://github.com/balzer82/Kalman">Kalman</a></p>
+      <p><a href="https://github.com/balzer82" class="avatar"><img src="https://2.gravatar.com/avatar/b58fcc6ff9be54dad9b3720fc1df8f60?d=https%3A%2F%2Fidenticons.github.com%2Fcac1360ef5c00604a1e8bddc451b4cf8.png&amp;r=x&amp;s=60" width="48" height="48"/></a> <a href="https://github.com/balzer82">balzer82</a> maintains <a href="https://github.com/balzer82/Kalman">Kalman</a></p>
 
 
       </div>
