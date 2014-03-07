@@ -46,14 +46,12 @@ Situation covered: You have an velocity sensor which measures the vehicle speed 
 
 Situation covered: You have an velocity sensor which measures the vehicle speed (v) in heading direction (ψ) and a yaw rate sensor (ψ˙) which both have to fused with the position (x & y) from a GPS sensor.
 
-Because of poor GPS signal quality, the position measurement is pretty inaccurate. Especially, when the car is standing still, the position is jumping. Therefore an adaptive Extended Kalman Filter is used here. It calculates the measurement noise covariance `R` in every filterstep depending on the `speed` and `EPE` (Estimated Position Error from GPS).
+Because of poor GPS signal quality, the position measurement is pretty inaccurate. Especially, when the car is standing still, the position error is high. Therefore, an Adaptive Extended Kalman Filter is used here. It calculates the measurement noise covariance `R` in every filterstep depending on the `speed` and `EPE` (Estimated Position Error from GPS).
 
 ![Adaptively calculated R](https://raw.github.com/balzer82/Kalman/master/Extended-Kalman-Filter-CTRV-Adaptive-R.png)
 
-The Trajectory is exportet to .kmz, which one can look at with Google Earth.
+The trajectory is exportet to a .kmz, which can best viewed with Google Earth:
 
 ![Google Earth Screenshot](https://raw.github.com/balzer82/Kalman/master/Extended-Kalman-Filter-CTRV-Adaptive-Kurve.jpg)
-
-`white`=GPS Position, `blue`=Extended Kalman Filter Position
 
 ####[View IPython Notebook](http://nbviewer.ipython.org/github/balzer82/Kalman/blob/master/Extended-Kalman-Filter-CTRV-Adaptive.ipynb?create=1)
