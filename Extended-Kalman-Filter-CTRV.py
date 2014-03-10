@@ -37,6 +37,7 @@ numstates=5 # States
 # <codecell>
 
 dt = 1.0/50.0 # Sample Rate of the Measurements is 50Hz
+dtGPS=1.0/10.0 # Sample Rate of GPS is 10Hz
 
 # <markdowncell>
 
@@ -166,7 +167,7 @@ control
 
 # <codecell>
 
-svQ = (1.5*dt)**2
+svQ = (1.5)**2
 syQ = (0.29*dt)**2
 
 Q = np.matrix([[svQ, 0.0],
@@ -297,7 +298,8 @@ print(I, I.shape)
 
 # <codecell>
 
-arc = 111323.872 # m/°
+RadiusEarth = 6378388.0 # m
+arc= 2.0*np.pi*RadiusEarth/360.0 # m/°
 
 dx = arc * np.cos(latitude*np.pi/180.0) * np.hstack((0.0, np.diff(longitude))) # in m
 dy = arc * np.hstack((0.0, np.diff(latitude))) # in m
@@ -305,8 +307,9 @@ dy = arc * np.hstack((0.0, np.diff(latitude))) # in m
 mx = np.cumsum(dx)
 my = np.cumsum(dy)
 
-GPS=(np.abs(my)>0.0).astype('bool') # GPS Trigger for Kalman Filter
-GPS[0]=True
+ds = np.sqrt(dx**2+dy**2)
+
+GPS=np.hstack((True, (np.diff(ds)>0.0).astype('bool'))) # GPS Trigger for Kalman Filter
 
 # <headingcell level=2>
 
@@ -403,10 +406,7 @@ for filterstep in range(m):
     vt=speed[filterstep]/3.6
     yat=yawrate[filterstep]/180.0*np.pi
     
-    if vt<0.2: # clamp speed and yawrate to zero while standing still
-        vt=0.0
-        yat=0.0
-    
+   
     # Time Update (Prediction)
     # ========================
     # Project the state ahead

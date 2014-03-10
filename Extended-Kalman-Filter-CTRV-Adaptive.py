@@ -45,7 +45,7 @@ dtGPS=1.0/10.0 # Sample Rate of GPS is 10Hz
 
 # <codecell>
 
-vs, psis, dpsis, dts, xs, ys, lats, lons, rs = symbols('v \psi \dot\psi T x y lat lon')
+vs, psis, dpsis, dts, xs, ys, lats, lons = symbols('v \psi \dot\psi T x y lat lon')
 
 As = Matrix([[xs+(vs/dpsis)*(sin(psis+dpsis*dts)-sin(psis))],
              [ys+(vs/dpsis)*(-cos(psis+dpsis*dts)+cos(psis))],
