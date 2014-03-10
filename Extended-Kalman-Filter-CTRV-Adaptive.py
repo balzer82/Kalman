@@ -37,6 +37,7 @@ numstates=5 # States
 # <codecell>
 
 dt = 1.0/50.0 # Sample Rate of the Measurements is 50Hz
+dtGPS=1.0/10.0 # Sample Rate of GPS is 10Hz
 
 # <markdowncell>
 
@@ -44,7 +45,7 @@ dt = 1.0/50.0 # Sample Rate of the Measurements is 50Hz
 
 # <codecell>
 
-vs, psis, dpsis, dts, xs, ys, lats, lons = symbols('v \psi \dot\psi T x y lat lon')
+vs, psis, dpsis, dts, xs, ys, lats, lons, rs = symbols('v \psi \dot\psi T x y lat lon')
 
 As = Matrix([[xs+(vs/dpsis)*(sin(psis+dpsis*dts)-sin(psis))],
              [ys+(vs/dpsis)*(-cos(psis+dpsis*dts)+cos(psis))],
@@ -166,7 +167,7 @@ control
 
 # <codecell>
 
-svQ = (1.5*dt)**2
+svQ = (1.5)**2
 syQ = (0.29*dt)**2
 
 Q = np.matrix([[svQ, 0.0],
@@ -248,6 +249,12 @@ print('Read \'%s\' successfully.' % datafile)
 # We need an offset.
 course =(-course+90.0)
 
+# <codecell>
+
+# clamp speed and yawrate to zero while standing still
+#speed[speed<1.0]=0.0
+#yawrate[speed<1.0]=0.0
+
 # <headingcell level=2>
 
 # Measurement Noise Covariance R (Adaptive)
@@ -271,7 +278,7 @@ print(R, R.shape)
 # <codecell>
 
 plt.figure(figsize=(16,6))
-spspeed = (1.0/((speed/3.6)+0.0001))
+spspeed = (1.0/((speed/3.6)+0.01))
 spepe = (10.0)*epe
 sp = spspeed**2 + spepe**2
 plt.semilogy(spspeed, label='$\sigma_P$ from speed')
@@ -280,6 +287,9 @@ plt.semilogy(sp, label='Resulting $R$ value')
 plt.ylabel('Values for $R$ Matrix')
 plt.legend()
 plt.savefig('Extended-Kalman-Filter-CTRV-Adaptive-R.png', dpi=72, transparent=True, bbox_inches='tight')
+
+# <codecell>
+
 
 # <headingcell level=2>
 
@@ -314,7 +324,8 @@ print(I, I.shape)
 
 # <codecell>
 
-arc = 111323.872 # m/°
+RadiusEarth = 6378388.0 # m
+arc= 2.0*np.pi*RadiusEarth/360.0 # m/°
 
 dx = arc * np.cos(latitude*np.pi/180.0) * np.hstack((0.0, np.diff(longitude))) # in m
 dy = arc * np.hstack((0.0, np.diff(latitude))) # in m
@@ -322,8 +333,9 @@ dy = arc * np.hstack((0.0, np.diff(latitude))) # in m
 mx = np.cumsum(dx)
 my = np.cumsum(dy)
 
-GPS=(np.abs(my)>0.0).astype('bool') # GPS Trigger for Kalman Filter
-GPS[0]=True
+ds = np.sqrt(dx**2+dy**2)
+
+GPS=np.hstack((True, (np.diff(ds)>0.0).astype('bool'))) # GPS Trigger for Kalman Filter
 
 # <headingcell level=2>
 
@@ -331,7 +343,7 @@ GPS[0]=True
 
 # <codecell>
 
-x = np.matrix([[mx[0], my[0], course[0]/180.0*np.pi, speed[0]/3.6+0.001, yawrate[0]/180.0*np.pi]]).T
+x = np.matrix([[mx[0], my[0], course[0]/180.0*np.pi-0.3, speed[0]/3.6+0.001, yawrate[0]/180.0*np.pi]]).T
 print(x, x.shape)
 
 U=float(np.cos(x[2])*x[3])
@@ -419,11 +431,7 @@ for filterstep in range(m):
     # Data (Control)
     vt=speed[filterstep]/3.6
     yat=yawrate[filterstep]/180.0*np.pi
-    
-    if vt<0.2: # clamp speed and yawrate to zero while standing still
-        vt=0.0
-        yat=0.0
-    
+   
     # Time Update (Prediction)
     # ========================
     # Project the state ahead
@@ -433,7 +441,7 @@ for filterstep in range(m):
         x[1] = x[1] + vt*dt * np.sin(x[2])
         x[2] = x[2]
         x[3] = vt
-        x[4] = 0.0000001 # avoid numerical issues in Jacobians
+        x[4] = -0.0000001 # avoid numerical issues in Jacobians
         dstate.append(0)
     else: # otherwise
         x[0] = x[0] + (vt/yat) * (np.sin(yat*dt+x[2]) - np.sin(x[2]))
@@ -472,23 +480,26 @@ for filterstep in range(m):
     # Project the error covariance ahead
     P = JA*P*JA.T + JG*Q*JG.T
     
+    
+    # Measurement Update (Correction)
+    # ===============================
     # Because GPS is sampled with 10Hz and the other Measurements, as well as
     # the filter are sampled with 50Hz, one have to wait for correction until
     # there is a new GPS Measurement
+    
     if GPS[filterstep]:
-        
-        # Measurement Update (Correction)
-        # ===============================
-        
         # Measurement Function
         hx = np.matrix([[float(x[0])],
                         [float(x[1])]])
         
+    
         # Calculate the Jacobian of the Measurement Function
         # see "Measurement Matrix H"
         H = np.matrix([[1.0, 0.0, 0.0, 0.0, 0.0],
                        [0.0, 1.0, 0.0, 0.0, 0.0]])
+    
         
+            
         # Calculate R with Data from the GPS Signal itself
         # and raise it when standing still
         R = sp[filterstep] * np.eye(2)
@@ -608,26 +619,28 @@ plt.step(range(len(measurements[0])),x1-my[0], label='$y$')
 
 plt.title('Extended Kalman Filter State Estimates (State Vector $x$)')
 plt.legend(loc='best',prop={'size':22})
-plt.ylabel('Position (relative to start) [m]')
+plt.ylabel('Position [m]')
 
 plt.subplot(412)
-plt.step(range(len(measurements[0])),x2, label='$\psi$')
-plt.step(range(len(measurements[0])),(course/180.0*np.pi+np.pi)%(2.0*np.pi) - np.pi, label='$\psi$ (from GPS as reference)')
-plt.ylabel('Course')
+plt.step(range(len(measurements[0])),np.multiply(x2,180.0/np.pi), label='$\psi$')
+plt.step(range(len(measurements[0])),(course+180.0)%(360.0)-180.0, label='$\psi$ (GPS)')
+plt.ylabel('Course $^\circ$')
+plt.yticks(np.arange(-180, 181, 45))
+plt.ylim([-200,200])
 plt.legend(loc='best',prop={'size':16})
            
 plt.subplot(413)
-plt.step(range(len(measurements[0])),x3, label='$v$')
-plt.step(range(len(measurements[0])),speed/3.6, label='$v$ (from GPS as reference)')
-plt.ylabel('Velocity')
-plt.ylim([0, 30])
+plt.step(range(len(measurements[0])),np.multiply(x3,3.6), label='$v$')
+plt.step(range(len(measurements[0])),speed, label='$v$ (GPS)')
+plt.ylabel('Velocity $km/h$')
+#plt.ylim([0, 30])
 plt.legend(loc='best',prop={'size':16})
 
 plt.subplot(414)
-plt.step(range(len(measurements[0])),x4, label='$\dot \psi$')
-plt.step(range(len(measurements[0])),yawrate/180.0*np.pi, label='$\dot \psi$ (from IMU as reference)')
-plt.ylabel('Yaw Rate')
-plt.ylim([-0.6, 0.6])
+plt.step(range(len(measurements[0])),np.multiply(x4,180.0/np.pi), label='$\dot \psi$')
+plt.step(range(len(measurements[0])),yawrate, label='$\dot \psi$ (IMU)')
+plt.ylabel('Yaw Rate $^\circ/s$')
+#plt.ylim([-0.6, 0.6])
 plt.legend(loc='best',prop={'size':16})
 plt.xlabel('Filter Step')
 
@@ -649,13 +662,14 @@ plt.savefig('Extended-Kalman-Filter-CTRV-State-Estimates.png', dpi=72, transpare
 fig = plt.figure(figsize=(16,9))
 
 # EKF State
-plt.quiver(x0,x1,np.cos(x2), np.sin(x2), color='#94C600', units='xy', width=0.01, scale=0.5)
+qscale= 0.5*np.divide(x3,np.max(x3))+0.1
+plt.quiver(x0,x1,np.cos(x2), np.sin(x2), color='#94C600', units='xy', width=0.01, scale=qscale)
 plt.scatter(x0,x1, c=dstate, s=30, label='EKF Position')
 
 # Measurements
-plt.scatter(mx[::5],my[::5], s=50, label='GPS Measurements', c=epe[::5], cmap='autumn_r')
-cbar=plt.colorbar(ticks=np.arange(20))
-cbar.ax.set_ylabel(u'EPE', rotation=270)
+plt.scatter(mx[::5],my[::5], s=50, label='GPS Measurements', c=sp[::5], cmap='autumn_r',norm=matplotlib.colors.LogNorm())
+cbar=plt.colorbar()
+cbar.ax.set_ylabel(u'$\sigma^2_r$ (Elements of Measurement Noise Covariance Matrix $R$)', rotation=270)
 cbar.ax.set_xlabel(u'm')
 
 # Start/Goal
@@ -779,11 +793,13 @@ kml.savekmz("Extended-Kalman-Filter-CTRV-Adaptive.kmz")
 
 print('Exported KMZ File for Google Earth')
 
-# <codecell>
+# <headingcell level=2>
 
+# Screenshot
 
-# <codecell>
+# <markdowncell>
 
+# ![Google Earth](https://raw.github.com/balzer82/Kalman/master/Extended-Kalman-Filter-CTRV-Adaptive-Kurve.jpg)
 
 # <codecell>
 
