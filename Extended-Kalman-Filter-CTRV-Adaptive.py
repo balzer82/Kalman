@@ -252,8 +252,8 @@ course =(-course+90.0)
 # <codecell>
 
 # clamp speed and yawrate to zero while standing still
-#speed[speed<1.0]=0.0
-#yawrate[speed<1.0]=0.0
+speed[speed<5.0]=0.0
+yawrate[speed<5.0]=0.0
 
 # <headingcell level=2>
 
@@ -273,7 +273,15 @@ print(R, R.shape)
 
 # <markdowncell>
 
-# R is here just initialized. In the Kalman Filter Step it will calculated dynamically with the $EPE$ (Estimated Position Error) from the GPS signal as well as depending on the $speed$, like explained in [Wender, S. (2008). Multisensorsystem zur erweiterten Fahrzeugumfelderfassung. Retrieved from http://vts.uni-ulm.de/docs/2008/6605/vts_6605_9026.pdf P.108].
+# R is here just initialized. In the Kalman Filter Step it will calculated dynamically with the $EPE$ (Estimated Position Error) from the GPS signal as well as depending on the $speed$, like proposed in [Wender, S. (2008). Multisensorsystem zur erweiterten Fahrzeugumfelderfassung. Retrieved from http://vts.uni-ulm.de/docs/2008/6605/vts_6605_9026.pdf P.108].
+
+# <markdowncell>
+
+# $\sigma_p^2 = \sigma_\text{speed}^2 + \sigma_\text{EPE}^2$
+# 
+# $\sigma_v = (v+0.01)^{-1}$
+# 
+# $\sigma_\text{EPE} = 10 \cdot EPE$
 
 # <codecell>
 
@@ -801,6 +809,7 @@ print('Exported KMZ File for Google Earth')
 
 # ![Google Earth](https://raw.github.com/balzer82/Kalman/master/Extended-Kalman-Filter-CTRV-Adaptive-Kurve.jpg)
 
-# <codecell>
+# <markdowncell>
 
+# Works just fine!
 
