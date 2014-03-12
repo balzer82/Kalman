@@ -58,7 +58,9 @@ The trajectory is exportet to a [.kmz](https://github.com/balzer82/Kalman/blob/m
 
 ![State](https://raw.github.com/balzer82/Kalman/master/Formulas/A-CTRV-Attitude.png)
 
-Roll and pitch are estimated as well.
+Roll and pitch are estimated as well:
+
+![EKF Attitude States](https://raw.github.com/balzer82/Kalman/master/Extended-Kalman-Filter-CTRV-Attitude-State-Estimates.png)
 
 ####[View IPython Notebook](http://nbviewer.ipython.org/github/balzer82/Kalman/blob/master/Extended-Kalman-Filter-CTRV-Attitude.ipynb?create=1)
 
