@@ -50,8 +50,15 @@ Because of poor GPS signal quality, the position measurement is pretty inaccurat
 
 ![Adaptively calculated R](https://raw.github.com/balzer82/Kalman/master/Extended-Kalman-Filter-CTRV-Adaptive-R.png)
 
-The trajectory is exportet to a .kmz, which can best viewed with Google Earth:
-
-![Google Earth Screenshot](https://raw.github.com/balzer82/Kalman/master/Extended-Kalman-Filter-CTRV-Adaptive-Kurve.jpg)
+The trajectory is exportet to a [.kmz](https://github.com/balzer82/Kalman/blob/master/Extended-Kalman-Filter-CTRV-Adaptive.kmz?raw=true), which can best viewed with Google Earth.
 
 ####[View IPython Notebook](http://nbviewer.ipython.org/github/balzer82/Kalman/blob/master/Extended-Kalman-Filter-CTRV-Adaptive.ipynb?create=1)
+
+## Adaptive Extended Kalman Filter with Constant Turn Rate and Velocity (CTRV) Model and Attitude Estimation
+
+![State](https://raw.github.com/balzer82/Kalman/master/Formulas/A-CTRV-Attitude.png)
+
+Roll and pitch are estimated as well.
+
+####[View IPython Notebook](http://nbviewer.ipython.org/github/balzer82/Kalman/blob/master/Extended-Kalman-Filter-CTRV-Attitude.ipynb?create=1)
+
