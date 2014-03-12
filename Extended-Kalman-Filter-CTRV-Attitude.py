@@ -271,10 +271,14 @@ yawrate[speed<5.0]=0.0
 
 # "In practical use, the uncertainty estimates take on the significance of relative weights of state estimates and measurements. So it is not so much important that uncertainty is absolutely correct as it is that it be relatively consistent across all models" - Kelly, A. (1994). A 3D state space formulation of a navigation Kalman filter for autonomous vehicles, (May). Retrieved from http://oai.dtic.mil/oai/oai?verb=getRecord&metadataPrefix=html&identifier=ADA282853
 
+# <markdowncell>
+
+# Because the estimation of Roll and Pitch is only valid for quasistatic situations (which is not valid for a moving vehicle), the values for the measured rotation $\sigma_r$ is very high.
+
 # <codecell>
 
 sp = 6.0**2
-sr = (5.0*dt)**2
+sr = (100.0*dt)**2
 R = np.matrix([[sp, 0.0, 0.0, 0.0],
                [0.0, sp, 0.0, 0.0],
                [0.0, 0.0, sr, 0.0],
@@ -697,7 +701,7 @@ plt.ylim([-1.0,1.0])
 
 # <codecell>
 
-fig = plt.figure(figsize=(16,numstates+5))
+fig = plt.figure(figsize=(16,2*numstates))
 
 # X/Y
 plt.subplot(611)
@@ -741,6 +745,11 @@ plt.step(range(len(measurements[0])),pitchrate, label='$\dot \phi$ (IMU)', alpha
 plt.ylabel('Pitch$^\circ$')
 plt.ylim([-20.0, 20.0])
 plt.legend(loc='best',prop={'size':16})
+plt.twinx()
+plt.step(range(len(measurements[0])),altitude, label='$H$ (GPS)', alpha=0.2, color='k')
+plt.ylabel('Altitude $m$')
+plt.ylim([100.0, 140.0])
+
 
 # Roll
 plt.subplot(616)
