@@ -491,37 +491,39 @@ for filterstep in range(m):
     
     # Measurement Update (Correction)
     # ===============================
+
+    # Measurement Function
+    hx = np.matrix([[float(x[0])],
+                    [float(x[1])]])
+    
     # Because GPS is sampled with 10Hz and the other Measurements, as well as
     # the filter are sampled with 50Hz, one have to wait for correction until
     # there is a new GPS Measurement
-    
     if GPS[filterstep]:
-        # Measurement Function
-        hx = np.matrix([[float(x[0])],
-                        [float(x[1])]])
-        
-    
         # Calculate the Jacobian of the Measurement Function
         # see "Measurement Matrix H"
         H = np.matrix([[1.0, 0.0, 0.0, 0.0, 0.0],
                        [0.0, 1.0, 0.0, 0.0, 0.0]])
+    else:
+        H = np.matrix([[0.0, 0.0, 0.0, 0.0, 0.0],
+                       [0.0, 0.0, 0.0, 0.0, 0.0]])
+
     
         
-            
-        # Calculate R with Data from the GPS Signal itself
-        # and raise it when standing still
-        R = sp[filterstep] * np.eye(2)
-        
-        S = H*P*H.T + R
-        K = (P*H.T) * np.linalg.inv(S)
+    # Calculate R with Data from the GPS Signal itself
+    # and raise it when standing still
+    R = sp[filterstep] * np.eye(2)
     
-        # Update the estimate via
-        Z = measurements[:,filterstep].reshape(H.shape[0],1)
-        y = Z - (hx)                         # Innovation or Residual
-        x = x + (K*y)
-        
-        # Update the error covariance
-        P = (I - (K*H))*P
+    S = H*P*H.T + R
+    K = (P*H.T) * np.linalg.inv(S)
+
+    # Update the estimate via
+    Z = measurements[:,filterstep].reshape(H.shape[0],1)
+    y = Z - (hx)                         # Innovation or Residual
+    x = x + (K*y)
+    
+    # Update the error covariance
+    P = (I - (K*H))*P
     
 
     # Save states for Plotting
