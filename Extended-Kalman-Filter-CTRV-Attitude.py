@@ -221,7 +221,7 @@ plt.tight_layout()
 # <codecell>
 
 path = './../RaspberryPi-CarPC/TinkerDataLogger/DataLogs/2014/'
-datafile = path+'2014-02-14-001-Data.csv'
+datafile = path+'2014-02-21-002-Data.csv'
 
 date, \
 time, \
@@ -247,7 +247,7 @@ epe, \
 fix, \
 satellites_view, \
 satellites_used, \
-temp = np.loadtxt(datafile, delimiter=',', unpack=True, skiprows=2500)
+temp = np.loadtxt(datafile, delimiter=',', unpack=True, skiprows=1000)
 
 print('Read \'%s\' successfully.' % datafile)
 
@@ -256,6 +256,15 @@ print('Read \'%s\' successfully.' % datafile)
 # In the Calculation following, East is Zero and North is 90°
 # We need an offset.
 course =(-course+90.0)
+
+# <headingcell level=3>
+
+# Static Gain
+
+# <codecell>
+
+pitchrate = pitchrate - 0.683613
+rollrate = rollrate - 0.433898
 
 # <codecell>
 
@@ -337,6 +346,7 @@ plt.semilogy(spspeed, label='$\sigma_P$ from speed')
 plt.semilogy(spepe, label='$\sigma_P$ from EPE')
 plt.semilogy(sp, label='Resulting $R$ value')
 plt.ylabel('Values for $R$ Matrix')
+plt.xlabel('Filterstep ($k$)')
 plt.legend()
 plt.savefig('Extended-Kalman-Filter-CTRV-Adaptive-R.png', dpi=72, transparent=True, bbox_inches='tight')
 
@@ -569,13 +579,13 @@ for filterstep in range(m):
         # see "Measurement Matrix H"
         H = np.matrix([[1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
                        [0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
-                       [0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0],
-                       [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0]])
+                       [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+                       [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]])
     else:
         H = np.matrix([[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
                        [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
-                       [0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0],
-                       [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0]])        
+                       [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+                       [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]])        
     
         
     # Calculate R with Data from the GPS Signal itself
