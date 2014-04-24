@@ -622,7 +622,7 @@ plt.savefig('Extended-Kalman-Filter-CTRV-State-Estimates.png', dpi=72, transpare
 
 # <codecell>
 
-%pylab --no-import-all
+#%pylab --no-import-all
 
 # <codecell>
 
@@ -630,13 +630,13 @@ fig = plt.figure(figsize=(16,9))
 
 # EKF State
 plt.quiver(x0,x1,np.cos(x2), np.sin(x2), color='#94C600', units='xy', width=0.05, scale=0.5)
-plt.scatter(x0,x1, c=dstate, s=30, label='EKF Position')
+plt.plot(x0,x1, label='EKF Position')
 
 # Measurements
-plt.scatter(mx[::5],my[::5], s=50, label='GPS Measurements', c=epe[::5], cmap='autumn_r')
-cbar=plt.colorbar(ticks=np.arange(20))
-cbar.ax.set_ylabel(u'EPE', rotation=270)
-cbar.ax.set_xlabel(u'm')
+plt.scatter(mx[::5],my[::5], s=50, label='GPS Measurements')
+#cbar=plt.colorbar(ticks=np.arange(20))
+#cbar.ax.set_ylabel(u'EPE', rotation=270)
+#cbar.ax.set_xlabel(u'm')
 
 # Start/Goal
 plt.scatter(x0[0],x1[0], s=60, label='Start', c='g')
@@ -645,12 +645,45 @@ plt.scatter(x0[-1],x1[-1], s=60, label='Goal', c='r')
 plt.xlabel('X [m]')
 plt.ylabel('Y [m]')
 plt.title('Position')
-#plt.legend(loc='best')
+plt.legend(loc='best')
 plt.axis('equal')
 #plt.tight_layout()
 
 plt.show()
 #plt.savefig('Extended-Kalman-Filter-CTRV-Position.png', dpi=72, transparent=True, bbox_inches='tight')
+
+# <headingcell level=2>
+
+# Detail View of the Start
+
+# <codecell>
+
+fig = plt.figure(figsize=(16,9))
+
+# EKF State
+plt.quiver(x0,x1,np.cos(x2), np.sin(x2), color='#94C600', units='xy', width=0.05, scale=0.5)
+plt.plot(x0,x1, label='EKF Position')
+
+# Measurements
+plt.scatter(mx[::5],my[::5], s=50, label='GPS Measurements')
+#cbar=plt.colorbar(ticks=np.arange(20))
+#cbar.ax.set_ylabel(u'EPE', rotation=270)
+#cbar.ax.set_xlabel(u'm')
+
+# Start/Goal
+plt.scatter(x0[0],x1[0], s=60, label='Start', c='g')
+plt.scatter(x0[-1],x1[-1], s=60, label='Goal', c='r')
+
+plt.xlabel('X [m]')
+plt.ylabel('Y [m]')
+plt.title('Position (Detail)')
+plt.legend(loc='best')
+plt.axis('equal')
+plt.xlim(-1, 20)
+plt.ylim(-10, 5)
+#plt.tight_layout()
+
+plt.show()
 
 # <codecell>
 
