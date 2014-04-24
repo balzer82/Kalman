@@ -221,8 +221,7 @@ plt.tight_layout()
 # <codecell>
 
 path = './../RaspberryPi-CarPC/TinkerDataLogger/DataLogs/2014/'
-datafile = path+'2014-02-14-001-Data.csv'
-
+datafile = path+'2014-02-21-002-Data.csv'
 
 date, \
 time, \
@@ -258,14 +257,24 @@ print('Read \'%s\' successfully.' % datafile)
 # We need an offset.
 course =(-course+90.0)
 
+# <codecell>
+
+awgs84=6378.0
+bwgs84=6357.0
+
+ewgs84=np.sqrt((awgs84**2 - bwgs84**2)/awgs84**2)
+
+rlon = (awgs84/(np.sqrt(1.0 - ewgs84**2 * (np.sin(lat*np.pi/180.0))**2) + altitude)) * np.cos(lat*np.pi/180.0)
+rlat = (awgs84*(1.0-ewgs84**2)/(1.0-ewgs84**2 * (np.sin(lat*np.pi/180.0))**2)**(3/2)) + altitude
+
 # <headingcell level=3>
 
 # Static Gain
 
 # <codecell>
 
-pitchrate = pitchrate - np.mean(pitchrate)
-rollrate = rollrate - np.mean(rollrate)
+pitchrate = pitchrate - 0.683613
+rollrate = rollrate - 0.433898
 
 # <codecell>
 
@@ -580,13 +589,13 @@ for filterstep in range(m):
         # see "Measurement Matrix H"
         H = np.matrix([[1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
                        [0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
-                       [0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0],
-                       [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0]])
+                       [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+                       [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]])
     else:
         H = np.matrix([[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
                        [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
-                       [0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0],
-                       [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0]])        
+                       [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+                       [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]])        
     
         
     # Calculate R with Data from the GPS Signal itself
