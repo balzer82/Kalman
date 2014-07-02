@@ -338,7 +338,7 @@ Zm = Zr + sp * (np.random.randn(m))
 
 fig = plt.figure(figsize=(16,9))
 ax = fig.add_subplot(111, projection='3d')
-ax.scatter(Xm, Ym, Zm)
+ax.scatter(Xm, Ym, Zm, c='gray')
 ax.set_xlabel('X')
 ax.set_ylabel('Y')
 ax.set_zlabel('Z')
@@ -621,8 +621,8 @@ plt.savefig('Kalman-Filter-CA-Ball-StateEstimated.png', dpi=150, bbox_inches='ti
 
 fig = plt.figure(figsize=(16,9))
 ax = fig.add_subplot(111, projection='3d')
-ax.scatter(xt, yt, zt, label='Estimate', c='k')
-ax.plot(Xr, Yr, Zr, c='g', label='Real')
+ax.plot(xt,yt,zt, label='Kalman Filter Estimate')
+ax.plot(Xr, Yr, Zr, label='Real')
 ax.set_xlabel('X')
 ax.set_ylabel('Y')
 ax.set_zlabel('Z')
@@ -637,7 +637,7 @@ mean_z = Zm.mean()
 ax.set_xlim(mean_x - max_range, mean_x + max_range)
 ax.set_ylim(mean_y - max_range, mean_y + max_range)
 ax.set_zlim(mean_z - max_range, mean_z + max_range)
-#plt.savefig('BallTrajectory-Computervision-Kalman.png', dpi=150, bbox_inches='tight')
+plt.savefig('Kalman-Filter-CA-Ball-Trajectory.png', dpi=150, bbox_inches='tight')
 
 # <headingcell level=1>
 
