@@ -18,6 +18,24 @@ printing.init_printing()
 
 # <markdowncell>
 
+# ![Extended Kalman Filter Step](Extended-Kalman-Filter-Step.png)
+
+# <markdowncell>
+
+# [Wikipedia](http://en.wikipedia.org/wiki/Extended_Kalman_filter) writes: In the extended Kalman filter, the state transition and observation models need not be linear functions of the state but may instead be differentiable functions.
+# 
+# $\boldsymbol{x}_{k} = g(\boldsymbol{x}_{k-1}, \boldsymbol{u}_{k-1}) + \boldsymbol{w}_{k-1}$
+# 
+# $\boldsymbol{z}_{k} = h(\boldsymbol{x}_{k}) + \boldsymbol{v}_{k}$
+# 
+# Where $w_k$ and $v_k$ are the process and observation noises which are both assumed to be zero mean Multivariate Gaussian noises with covariance matrix $Q$ and $R$ respectively.
+# 
+# The function $g$ can be used to compute the predicted state from the previous estimate and similarly the function $h$ can be used to compute the predicted measurement from the predicted state. However, $g$ and $h$ cannot be applied to the covariance directly. Instead a matrix of partial derivatives (the Jacobian matrix) is computed.
+# 
+# At each time step, the Jacobian is evaluated with current predicted states. These matrices can be used in the Kalman filter equations. This process essentially linearizes the non-linear function around the current estimate.
+
+# <markdowncell>
+
 # Situation covered: You have an velocity sensor which measures the vehicle speed ($v$) in heading direction ($\psi$) and a yaw rate sensor ($\dot \psi$) which both have to fused with the position ($x$ & $y$) from a GPS sensor.
 
 # <headingcell level=2>
@@ -26,7 +44,7 @@ printing.init_printing()
 
 # <markdowncell>
 
-# Constant Turn Rate, Constant Velocity Model for a vehicle ![CTRV Model](https://raw.github.com/balzer82/Kalman/master/CTRV-Model.png)
+# Constant Turn Rate, Constant Velocity Model for a vehicle ![CTRV Model](CTRV-Model.png)
 # 
 # $$x_k= \left[ \matrix{ x \\ y \\ \psi \\ v \\ \dot\psi} \right] = \left[ \matrix{ \text{Position X} \\ \text{Position Y} \\ \text{Heading} \\ \text{Velocity} \\ \text{Yaw Rate}} \right]$$
 
@@ -47,7 +65,7 @@ dtGPS=1.0/10.0 # Sample Rate of GPS is 10Hz
 
 vs, psis, dpsis, dts, xs, ys, lats, lons = symbols('v \psi \dot\psi T x y lat lon')
 
-As = Matrix([[xs+(vs/dpsis)*(sin(psis+dpsis*dts)-sin(psis))],
+gs = Matrix([[xs+(vs/dpsis)*(sin(psis+dpsis*dts)-sin(psis))],
              [ys+(vs/dpsis)*(-cos(psis+dpsis*dts)+cos(psis))],
              [psis+dpsis*dts],
              [vs],
@@ -56,7 +74,37 @@ state = Matrix([xs,ys,psis,vs,dpsis])
 
 # <headingcell level=2>
 
-# Initial Uncertainty
+# Dynamic Matrix
+
+# <markdowncell>
+
+# This formulas calculate how the state is evolving from one to the next time step
+
+# <codecell>
+
+gs
+
+# <headingcell level=3>
+
+# Calculate the Jacobian of the Dynamic Matrix with respect to the state vector
+
+# <codecell>
+
+state
+
+# <codecell>
+
+gs.jacobian(state)
+
+# <markdowncell>
+
+# It has to be computed on every filter step because it consists of state variables!
+# 
+# To Sympy Team: A `.to_python` and `.to_c` and `.to_matlab` whould be nice to generate code, like it already works with `print latex()`.
+
+# <headingcell level=2>
+
+# Initial Uncertainty $P_0$
 
 # <markdowncell>
 
@@ -67,7 +115,7 @@ state = Matrix([xs,ys,psis,vs,dpsis])
 P = np.diag([1000.0, 1000.0, 1000.0, 1000.0, 1000.0])
 print(P, P.shape)
 
-fig = plt.figure(figsize=(6, 6))
+fig = plt.figure(figsize=(5, 5))
 im = plt.imshow(P, interpolation="none", cmap=plt.get_cmap('binary'))
 plt.title('Initial Covariance Matrix $P$')
 ylocs, ylabels = plt.yticks()
@@ -95,113 +143,46 @@ plt.tight_layout()
 
 # <headingcell level=2>
 
-# Dynamic Matrix
-
-# <markdowncell>
-
-# This formulas calculate how the state is evolving from one to the next time step
-
-# <codecell>
-
-As
-
-# <headingcell level=3>
-
-# Calculate the Jacobian of the Dynamic Matrix with respect to the state vector
-
-# <codecell>
-
-state
-
-# <codecell>
-
-As.jacobian(state)
-
-# <markdowncell>
-
-# It has to be computed on every filter step because it consists of state variables.
-
-# <headingcell level=2>
-
-# Control Input
-
-# <markdowncell>
-
-# Matrix G is the Jacobian of the Dynamic Matrix with respect to control (the translation velocity $v$ and the rotational
-# velocity $\dot \psi$).
-
-# <codecell>
-
-control = Matrix([vs,dpsis])
-control
-
-# <headingcell level=3>
-
-# Calculate the Jacobian of the Dynamic Matrix with Respect to the Control
-
-# <codecell>
-
-Gs=As.jacobian(control)
-Gs
-
-# <markdowncell>
-
-# It has to be computed on every filter step because it consists of state variables.
-
-# <headingcell level=2>
-
 # Process Noise Covariance Matrix Q
 
 # <markdowncell>
 
-# Matrix Q is the expected noise on the State.
-# 
-# One method is based on the interpretation of the matrix as the weight of the dynamics prediction from the state equations
-# Q relative to the measurements.
-# 
-# As you can see in [Schubert, R., Adam, C., Obst, M., Mattern, N., Leonhardt, V., & Wanielik, G. (2011). Empirical evaluation of vehicular models for ego motion estimation. 2011 IEEE Intelligent Vehicles Symposium (IV), 534–539. doi:10.1109/IVS.2011.5940526] one can assume the velocity process noise for a vehicle with $\sigma_v=1.5m/s$ and the yaw rate process noise with $\sigma_\psi=0.29rad/s$, when a timestep takes 0.02s (50Hz).
+# "*The state uncertainty model models the disturbances which excite the linear system. Conceptually, it estimates how bad things can get when the system is run open loop for a given period of time.*" - Kelly, A. (1994). A 3D state space formulation of a navigation Kalman filter for autonomous vehicles, (May). Retrieved from http://oai.dtic.mil/oai/oai?verb=getRecord&metadataPrefix=html&identifier=ADA282853
 
 # <codecell>
 
-control
+sGPS     = 0.5*8.8*dt**2  # assume 8.8m/s2 as maximum acceleration, forcing the vehicle
+sCourse  = 0.1*dt # assume 0.1rad/s as maximum turn rate for the vehicle
+sVelocity= 8.8*dt # assume 8.8m/s2 as maximum acceleration, forcing the vehicle
+sYaw     = 1.0*dt # assume 1.0rad/s2 as the maximum turn rate acceleration for the vehicle
 
-# <codecell>
-
-svQ = (1.5)**2
-syQ = (0.29*dt)**2
-
-Q = np.matrix([[svQ, 0.0],
-               [0.0, syQ]])
-
+Q = np.diag([sGPS**2, sGPS**2, sCourse**2, sVelocity**2, sYaw**2])
 print(Q, Q.shape)
 
 # <codecell>
 
-fig = plt.figure(figsize=(4, 4))
+fig = plt.figure(figsize=(5, 5))
 im = plt.imshow(Q, interpolation="none", cmap=plt.get_cmap('binary'))
 plt.title('Process Noise Covariance Matrix $Q$')
 ylocs, ylabels = plt.yticks()
 # set the locations of the yticks
-plt.yticks(np.arange(3))
+plt.yticks(np.arange(8))
 # set the locations and labels of the yticks
-plt.yticks(np.arange(2),('$v$', '$\dot \psi$'), fontsize=22)
+plt.yticks(np.arange(7),('$x$', '$y$', '$\psi$', '$v$', '$\dot \psi$'), fontsize=22)
 
 xlocs, xlabels = plt.xticks()
 # set the locations of the yticks
-plt.xticks(np.arange(3))
+plt.xticks(np.arange(8))
 # set the locations and labels of the yticks
-plt.xticks(np.arange(2),('$v$', '$\dot \psi$'), fontsize=22)
+plt.xticks(np.arange(7),('$x$', '$y$', '$\psi$', '$v$', '$\dot \psi$'), fontsize=22)
 
-plt.xlim([-0.5,1.5])
-plt.ylim([1.5, -0.5])
+plt.xlim([-0.5,4.5])
+plt.ylim([4.5, -0.5])
 
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 divider = make_axes_locatable(plt.gca())
 cax = divider.append_axes("right", "5%", pad="3%")
-plt.colorbar(im, cax=cax)
-
-
-plt.tight_layout()
+plt.colorbar(im, cax=cax);
 
 # <headingcell level=2>
 
@@ -210,7 +191,7 @@ plt.tight_layout()
 # <codecell>
 
 #path = './../RaspberryPi-CarPC/TinkerDataLogger/DataLogs/2014/'
-datafile = '2014-02-14-002-Data.csv'
+datafile = '2014-03-26-000-Data.csv'
 
 date, \
 time, \
@@ -251,7 +232,35 @@ course =(-course+90.0)
 
 # <headingcell level=2>
 
-# Measurement Noise Covariance R (Adaptive)
+# Measurement Function H
+
+# <markdowncell>
+
+# Matrix $J_H$ is the Jacobian of the Measurement function $h$ with respect to the state. Function $h$ can be used to compute the predicted measurement from the predicted state.
+
+# <codecell>
+
+hs = Matrix([[xs],
+             [ys],
+             [vs],
+             [dpsis]])
+hs
+
+# <codecell>
+
+JHs=hs.jacobian(state)
+JHs
+
+# <codecell>
+
+JH = np.matrix([[1.0, 0.0, 0.0, 0.0, 0.0],
+                [0.0, 1.0, 0.0, 0.0, 0.0],
+                [0.0, 0.0, 0.0, 1.0, 0.0],
+                [0.0, 0.0, 0.0, 0.0, 1.0]])
+
+# <headingcell level=2>
+
+# Measurement Noise Covariance $R$
 
 # <markdowncell>
 
@@ -259,28 +268,42 @@ course =(-course+90.0)
 
 # <codecell>
 
-sp = 6.0**2
-R = np.matrix([[sp, 0.0],
-               [0.0, sp]])
+varGPS = 6.0 # Variance of GPS Measurement
+varspeed = 1.0 # Variance of the speed measurement
+varyaw = 0.1 # Variance of the yawrate measurement
+R = np.matrix([[varGPS**2, 0.0, 0.0, 0.0],
+               [0.0, varGPS**2, 0.0, 0.0],
+               [0.0, 0.0, varspeed**2, 0.0],
+               [0.0, 0.0, 0.0, varyaw**2]])
 
 print(R, R.shape)
 
-# <headingcell level=2>
-
-# Measurement Function H
-
-# <markdowncell>
-
-# Matrix H is the Jacobian of the Measurement function h with respect to the state.
-
 # <codecell>
 
-hs = Matrix([[xs],
-             [ys]])
-Hs=hs.jacobian(state)
-Hs
+fig = plt.figure(figsize=(4.5, 4.5))
+im = plt.imshow(R, interpolation="none", cmap=plt.get_cmap('binary'))
+plt.title('Measurement Noise Covariance Matrix $R$')
+ylocs, ylabels = plt.yticks()
+# set the locations of the yticks
+plt.yticks(np.arange(5))
+# set the locations and labels of the yticks
+plt.yticks(np.arange(4),('$x$', '$y$', '$v$', '$\dot \psi$'), fontsize=22)
 
-# <headingcell level=3>
+xlocs, xlabels = plt.xticks()
+# set the locations of the yticks
+plt.xticks(np.arange(5))
+# set the locations and labels of the yticks
+plt.xticks(np.arange(4),('$x$', '$y$', '$v$', '$\dot \psi$'), fontsize=22)
+
+plt.xlim([-0.5,3.5])
+plt.ylim([3.5, -0.5])
+
+from mpl_toolkits.axes_grid1 import make_axes_locatable
+divider = make_axes_locatable(plt.gca())
+cax = divider.append_axes("right", "5%", pad="3%")
+plt.colorbar(im, cax=cax);
+
+# <headingcell level=2>
 
 # Identity Matrix
 
@@ -289,17 +312,14 @@ Hs
 I = np.eye(numstates)
 print(I, I.shape)
 
-# <codecell>
+# <headingcell level=2>
 
-
-# <headingcell level=3>
-
-# Lat/Lon to Meters
+# Approx. Lat/Lon to Meters to check Location
 
 # <codecell>
 
 RadiusEarth = 6378388.0 # m
-arc= 2.0*np.pi*RadiusEarth/360.0 # m/°
+arc= 2.0*np.pi*(RadiusEarth+altitude)/360.0 # m/°
 
 dx = arc * np.cos(latitude*np.pi/180.0) * np.hstack((0.0, np.diff(longitude))) # in m
 dy = arc * np.hstack((0.0, np.diff(latitude))) # in m
@@ -330,30 +350,11 @@ plt.axis('equal')
 
 # <headingcell level=3>
 
-# Add some Error
-
-# <codecell>
-
-#my[200:300]+=2.0 # Static Drift
-
-# <codecell>
-
-fig = plt.figure(figsize=(9,9))
-plt.scatter(mx,my, s=20, label='GPS Position', c='k')
-plt.scatter(mx[0],my[0], s=100, label='Start', c='g')
-plt.scatter(mx[-1],my[-1], s=100, label='Goal', c='r')
-plt.xlabel('E [m]')
-plt.ylabel('N [m]')
-plt.axis('equal')
-plt.legend(loc='best')
-
-# <headingcell level=3>
-
 # Put everything together as a measurement vector
 
 # <codecell>
 
-measurements = np.vstack((mx,my))
+measurements = np.vstack((mx, my, speed/3.6, yawrate/180.0*np.pi))
 # Lenth of the measurement
 m = measurements.shape[1]
 print(measurements.shape)
@@ -381,49 +382,40 @@ Kdx= []
 Kdy= []
 Kddx=[]
 dstate=[]
-K = np.matrix([[0.0], [0.0], [0.0], [0.0], [0.0]])
-Z = np.matrix([[0.0],[0.0],[0.0]])
 
-# <headingcell level=2>
+# <headingcell level=1>
 
 # Extended Kalman Filter
 
 # <markdowncell>
 
-# ![Extended Kalman Filter Step](https://raw.github.com/balzer82/Kalman/master/Extended-Kalman-Filter-Step.png)
+# ![Extended Kalman Filter Step](Extended-Kalman-Filter-Step.png)
 
 # <markdowncell>
 
-# Constant Turn Rate, Constant Velocity Model for a vehicle
-# 
 # $$x_k= \begin{bmatrix} x \\ y \\ \psi \\ v \\ \dot\psi \end{bmatrix} = \begin{bmatrix} \text{Position X} \\ \text{Position Y} \\ \text{Heading} \\ \text{Velocity} \\ \text{Yaw Rate} \end{bmatrix} =  \underbrace{\begin{matrix}x[0] \\ x[1] \\ x[2] \\ x[3] \\ x[4]  \end{matrix}}_{\textrm{Python Nomenclature}}$$
 
 # <codecell>
 
 for filterstep in range(m):
-    
-    # Data (Control)
-    vt=speed[filterstep]/3.6
-    yat=yawrate[filterstep]/180.0*np.pi
-    
-   
+
     # Time Update (Prediction)
     # ========================
     # Project the state ahead
     # see "Dynamic Matrix"
-    if np.abs(yat)<0.0001: # Driving straight
-        x[0] = x[0] + vt*dt * np.cos(x[2])
-        x[1] = x[1] + vt*dt * np.sin(x[2])
+    if np.abs(yawrate[filterstep])<0.0001: # Driving straight
+        x[0] = x[0] + x[3]*dt * np.cos(x[2])
+        x[1] = x[1] + x[3]*dt * np.sin(x[2])
         x[2] = x[2]
-        x[3] = vt
+        x[3] = x[3]
         x[4] = 0.0000001 # avoid numerical issues in Jacobians
         dstate.append(0)
     else: # otherwise
-        x[0] = x[0] + (vt/yat) * (np.sin(yat*dt+x[2]) - np.sin(x[2]))
-        x[1] = x[1] + (vt/yat) * (-np.cos(yat*dt+x[2])+ np.cos(x[2]))
-        x[2] = (x[2] + yat*dt + np.pi) % (2.0*np.pi) - np.pi
-        x[3] = vt
-        x[4] = yat
+        x[0] = x[0] + (x[3]/x[4]) * (np.sin(x[4]*dt+x[2]) - np.sin(x[2]))
+        x[1] = x[1] + (x[3]/x[4]) * (-np.cos(x[4]*dt+x[2])+ np.cos(x[2]))
+        x[2] = (x[2] + x[4]*dt + np.pi) % (2.0*np.pi) - np.pi
+        x[3] = x[3]
+        x[4] = x[4]
         dstate.append(1)
     
     # Calculate the Jacobian of the Dynamic Matrix A
@@ -435,55 +427,34 @@ for filterstep in range(m):
     a24 = float((1.0/x[4]) * (-np.cos(x[4]*dt+x[2]) + np.cos(x[2])))
     a25 = float((dt*x[3]/x[4])*np.sin(x[4]*dt+x[2]) - (x[3]/x[4]**2)*(-np.cos(x[4]*dt+x[2]) + np.cos(x[2])))
     JA = np.matrix([[1.0, 0.0, a13, a14, a15],
-                  [0.0, 1.0, a23, a24, a25],
-                  [0.0, 0.0, 1.0, 0.0, dt],
-                  [0.0, 0.0, 0.0, 1.0, 0.0],
-                  [0.0, 0.0, 0.0, 0.0, 1.0]])
+                    [0.0, 1.0, a23, a24, a25],
+                    [0.0, 0.0, 1.0, 0.0, dt],
+                    [0.0, 0.0, 0.0, 1.0, 0.0],
+                    [0.0, 0.0, 0.0, 0.0, 1.0]])
     
-    # Calculate the Jacobian of the Control Input G
-    # see "Calculate the Jacobian of the Dynamic Matrix with Respect to the Control"
-    g11 = float(1.0/x[4]*(-np.sin(x[2])+np.sin(dt*x[4]+x[2])))
-    g12 = float(dt*x[3]/x[4]*np.cos(dt*x[4]+x[2]) - x[3]/x[4]**2*(-np.sin(x[2])+np.sin(dt*x[4]+x[2])))
-    g21 = float(1.0/x[4]*(np.cos(x[2])-np.cos(dt*x[4]+x[2])))
-    g22 = float(dt*x[3]/x[4]*np.sin(dt*x[4]+x[2]) - x[3]/x[4]**2*(np.cos(x[2])-np.cos(dt*x[4]+x[2])))
-    JG = np.matrix([[g11, g12],
-                    [g21, g22],
-                    [0.0, dt],
-                    [1.0, 0.0],
-                    [0.0, 1.0]])
     
     # Project the error covariance ahead
-    P = JA*P*JA.T + JG*Q*JG.T
+    P = JA*P*JA.T + Q
     
-    # Because GPS is sampled with 10Hz and the other Measurements, as well as
-    # the filter are sampled with 50Hz, one have to wait for correction until
-    # there is a new GPS Measurement
-    if GPS[filterstep]:
-        
-        # Measurement Update (Correction)
-        # ===============================
-        
-        # Measurement Function
-        hx = np.matrix([[float(x[0])],
-                        [float(x[1])]])
-        
-        # Calculate the Jacobian of the Measurement Function
-        # see "Measurement Matrix H"
-        H = np.matrix([[1.0, 0.0, 0.0, 0.0, 0.0],
-                       [0.0, 1.0, 0.0, 0.0, 0.0]])
-        
-       
-        S = H*P*H.T + R
-        K = (P*H.T) * np.linalg.inv(S)
-    
-        # Update the estimate via
-        Z = measurements[:,filterstep].reshape(H.shape[0],1)
-        y = Z - (hx)                         # Innovation or Residual
-        x = x + (K*y)
-        
-        # Update the error covariance
-        P = (I - (K*H))*P
-    
+    # Measurement Update (Correction)
+    # ===============================
+    # Measurement Function
+    hx = np.matrix([[float(x[0])],
+                    [float(x[1])],
+                    [float(x[3])],
+                    [float(x[4])]])
+
+    S = JH*P*JH.T + R
+    K = (P*JH.T) * np.linalg.inv(S)
+
+    # Update the estimate via
+    Z = measurements[:,filterstep].reshape(JH.shape[0],1)
+    y = Z - (hx)                         # Innovation or Residual
+    x = x + (K*y)
+
+    # Update the error covariance
+    P = (I - (K*JH))*P
+
 
     # Save states for Plotting
     x0.append(float(x[0]))
@@ -572,7 +543,7 @@ plt.xlabel('Filter Step')
 plt.ylabel('')
 plt.title('Kalman Gain (the lower, the more the measurement fullfill the prediction)')
 plt.legend(prop={'size':18})
-plt.ylim([-0.5,0.5])
+plt.ylim([-0.1,0.1]);
 
 # <headingcell level=2>
 
@@ -613,9 +584,6 @@ plt.xlabel('Filter Step')
 
 plt.savefig('Extended-Kalman-Filter-CTRV-State-Estimates.png', dpi=72, transparent=True, bbox_inches='tight')
 
-# <codecell>
-
-
 # <headingcell level=2>
 
 # Position x/y
@@ -649,19 +617,18 @@ plt.legend(loc='best')
 plt.axis('equal')
 #plt.tight_layout()
 
-plt.show()
 #plt.savefig('Extended-Kalman-Filter-CTRV-Position.png', dpi=72, transparent=True, bbox_inches='tight')
 
-# <headingcell level=2>
+# <headingcell level=3>
 
-# Detail View of the Start
+# Detailed View
 
 # <codecell>
 
-fig = plt.figure(figsize=(16,9))
+fig = plt.figure(figsize=(9,9))
 
 # EKF State
-plt.quiver(x0,x1,np.cos(x2), np.sin(x2), color='#94C600', units='xy', width=0.05, scale=0.5)
+#plt.quiver(x0,x1,np.cos(x2), np.sin(x2), color='#94C600', units='xy', width=0.05, scale=0.5)
 plt.plot(x0,x1, label='EKF Position')
 
 # Measurements
@@ -670,24 +637,12 @@ plt.scatter(mx[::5],my[::5], s=50, label='GPS Measurements')
 #cbar.ax.set_ylabel(u'EPE', rotation=270)
 #cbar.ax.set_xlabel(u'm')
 
-# Start/Goal
-plt.scatter(x0[0],x1[0], s=60, label='Start', c='g')
-plt.scatter(x0[-1],x1[-1], s=60, label='Goal', c='r')
-
 plt.xlabel('X [m]')
+plt.xlim(70, 130)
 plt.ylabel('Y [m]')
-plt.title('Position (Detail)')
+plt.ylim(140, 200)
+plt.title('Position')
 plt.legend(loc='best')
-plt.axis('equal')
-plt.xlim(-1, 20)
-plt.ylim(-10, 5)
-#plt.tight_layout()
-
-plt.show()
-
-# <codecell>
-
-print('Done.')
 
 # <headingcell level=1>
 
@@ -789,13 +744,4 @@ kml.savekmz("Extended-Kalman-Filter-CTRV.kmz")
 # <codecell>
 
 print('Exported KMZ File for Google Earth')
-
-# <codecell>
-
-
-# <codecell>
-
-
-# <codecell>
-
 

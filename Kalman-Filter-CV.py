@@ -6,6 +6,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.stats import norm
+%pylab inline --no-import-all
 
 # <headingcell level=1>
 
@@ -17,6 +18,10 @@ from scipy.stats import norm
 # 
 # Situation covered: You drive with your car in a tunnel and the GPS signal is lost. Now the car has to determine, where it is in the tunnel. The only information it has, is the velocity in driving direction. The x and y component of the velocity ($\dot x$ and $\dot y$) can be calculated from the absolute velocity (revolutions of the wheels) and the heading of the vehicle (yaw rate sensor).
 
+# <markdowncell>
+
+# ![Kalman Filter](Kalman-Filter-Step.png)
+
 # <headingcell level=2>
 
 # State Vector
@@ -25,24 +30,27 @@ from scipy.stats import norm
 
 # Constant Velocity Model for Ego Motion
 # 
-# $$x= \left[ \matrix{ x \\ y \\ \dot x \\ \dot y} \right]$$
-# 
+# $$x_k= \left[ \matrix{ x \\ y \\ \dot x \\ \dot y} \right] = \matrix{ \text{Position X} \\ \text{Position Y} \\ \text{Velocity in X} \\ \text{Velocity in Y}}$$
 
 # <markdowncell>
 
-# Formal Definition:
+# Formal Definition (Motion of Law):
 # 
 # $$x_{k+1} = \textbf{A} \cdot x_{k}$$
 # 
 # $$x_{k+1} = \begin{bmatrix}1 & 0 & \Delta t & 0 \\ 0 & 1 & 0 & \Delta t \\ 0 & 0 & 1 & 0 \\ 0 & 0 & 0 & 1 \end{bmatrix} \cdot \begin{bmatrix} x \\ y \\ \dot x \\ \dot y \end{bmatrix}_{k}$$
+
+# <markdowncell>
+
+# Observation Model:
 # 
 # $$y = \textbf{H} \cdot x$$
 # 
-# $$y = \begin{bmatrix}0 & 0 & 1 & 0 \\ 0 & 0 & 0 & 1\end{bmatrix} \cdot x$$
+# $$y = \begin{bmatrix}0 & 0 & 1 & 0 \\ 0 & 0 & 0 & 1\end{bmatrix} \cdot x$$ means: You observe the velocity directly in the correct unit
 
 # <headingcell level=3>
 
-# Initial State
+# Initial State $x_0$
 
 # <codecell>
 
@@ -53,27 +61,27 @@ plt.title('Initial Location')
 
 # <headingcell level=3>
 
-# Initial Uncertainty
+# Initial Uncertainty $P_0$
 
 # <codecell>
 
-P = 1.0*np.eye(4)
+P = np.diag([1000.0, 1000.0, 1000.0, 1000.0])
 print(P, P.shape)
 
-fig = plt.figure(figsize=(5, 5))
+fig = plt.figure(figsize=(6, 6))
 im = plt.imshow(P, interpolation="none", cmap=plt.get_cmap('binary'))
 plt.title('Initial Covariance Matrix $P$')
-ylocs, ylabels = yticks()
+ylocs, ylabels = plt.yticks()
 # set the locations of the yticks
-yticks(arange(5))
+plt.yticks(np.arange(7))
 # set the locations and labels of the yticks
-yticks(arange(4),('$x$', '$y$', '$\dot x$', '$\dot y$'), fontsize=22)
+plt.yticks(np.arange(6),('$x$', '$y$', '$\dot x$', '$\dot y$'), fontsize=22)
 
-xlocs, xlabels = xticks()
+xlocs, xlabels = plt.xticks()
 # set the locations of the yticks
-xticks(arange(5))
+plt.xticks(np.arange(7))
 # set the locations and labels of the yticks
-xticks(arange(4),('$x$', '$y$', '$\dot x$', '$\dot y$'), fontsize=22)
+plt.xticks(np.arange(6),('$x$', '$y$', '$\dot x$', '$\dot y$'), fontsize=22)
 
 plt.xlim([-0.5,3.5])
 plt.ylim([3.5, -0.5])
@@ -81,14 +89,11 @@ plt.ylim([3.5, -0.5])
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 divider = make_axes_locatable(plt.gca())
 cax = divider.append_axes("right", "5%", pad="3%")
-plt.colorbar(im, cax=cax)
-
-
-plt.tight_layout()
+plt.colorbar(im, cax=cax);
 
 # <headingcell level=3>
 
-# Dynamic Matrix
+# Dynamic Matrix $A$
 
 # <markdowncell>
 
@@ -129,7 +134,7 @@ print(H, H.shape)
 
 # <codecell>
 
-ra = 1.0**2
+ra = 10.0**2
 
 R = np.matrix([[ra, 0.0],
               [0.0, ra]])
@@ -184,20 +189,20 @@ Qs*Qs.T
 
 # <codecell>
 
-fig = plt.figure(figsize=(5, 5))
+fig = plt.figure(figsize=(6, 6))
 im = plt.imshow(Q, interpolation="none", cmap=plt.get_cmap('binary'))
-plt.title('Process Noise Covariance Matrix $Q$')
-ylocs, ylabels = yticks()
+plt.title('Process Noise Covariance Matrix $P$')
+ylocs, ylabels = plt.yticks()
 # set the locations of the yticks
-yticks(arange(5))
+plt.yticks(np.arange(7))
 # set the locations and labels of the yticks
-yticks(arange(4),('$x$', '$y$', '$\dot x$', '$\dot y$'), fontsize=22)
+plt.yticks(np.arange(6),('$x$', '$y$', '$\dot x$', '$\dot y$'), fontsize=22)
 
-xlocs, xlabels = xticks()
+xlocs, xlabels = plt.xticks()
 # set the locations of the yticks
-xticks(arange(5))
+plt.xticks(np.arange(7))
 # set the locations and labels of the yticks
-xticks(arange(4),('$x$', '$y$', '$\dot x$', '$\dot y$'), fontsize=22)
+plt.xticks(np.arange(6),('$x$', '$y$', '$\dot x$', '$\dot y$'), fontsize=22)
 
 plt.xlim([-0.5,3.5])
 plt.ylim([3.5, -0.5])
@@ -205,10 +210,7 @@ plt.ylim([3.5, -0.5])
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 divider = make_axes_locatable(plt.gca())
 cax = divider.append_axes("right", "5%", pad="3%")
-plt.colorbar(im, cax=cax)
-
-
-plt.tight_layout()
+plt.colorbar(im, cax=cax);
 
 # <headingcell level=3>
 
@@ -275,7 +277,7 @@ Kdy= []
 
 # <markdowncell>
 
-# ![Kalman Filter](https://raw.github.com/balzer82/Kalman/master/Kalman-Filter-Step.png)
+# ![Kalman Filter](Kalman-Filter-Step.png)
 
 # <codecell>
 
@@ -357,20 +359,20 @@ plt.legend(loc='best',prop={'size':22})
 
 # <codecell>
 
-fig = plt.figure(figsize=(5, 5))
+fig = plt.figure(figsize=(6, 6))
 im = plt.imshow(P, interpolation="none", cmap=plt.get_cmap('binary'))
 plt.title('Covariance Matrix $P$')
-ylocs, ylabels = yticks()
+ylocs, ylabels = plt.yticks()
 # set the locations of the yticks
-yticks(arange(5))
+plt.yticks(np.arange(7))
 # set the locations and labels of the yticks
-yticks(arange(4),('$x$', '$y$', '$\dot x$', '$\dot y$'), fontsize=22)
+plt.yticks(np.arange(6),('$x$', '$y$', '$\dot x$', '$\dot y$'), fontsize=22)
 
-xlocs, xlabels = xticks()
+xlocs, xlabels = plt.xticks()
 # set the locations of the yticks
-xticks(arange(5))
+plt.xticks(np.arange(7))
 # set the locations and labels of the yticks
-xticks(arange(4),('$x$', '$y$', '$\dot x$', '$\dot y$'), fontsize=22)
+plt.xticks(np.arange(6),('$x$', '$y$', '$\dot x$', '$\dot y$'), fontsize=22)
 
 plt.xlim([-0.5,3.5])
 plt.ylim([3.5, -0.5])
@@ -378,18 +380,15 @@ plt.ylim([3.5, -0.5])
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 divider = make_axes_locatable(plt.gca())
 cax = divider.append_axes("right", "5%", pad="3%")
-plt.colorbar(im, cax=cax)
-
-
-plt.tight_layout()
+plt.colorbar(im, cax=cax);
 
 # <codecell>
 
 fig = plt.figure(figsize=(16,9))
-plt.semilogy(range(len(measurements[0])),Px, label='$x$')
-plt.semilogy(range(len(measurements[0])),Py, label='$y$')
-plt.semilogy(range(len(measurements[0])),Pdx, label='$\dot x$')
-plt.semilogy(range(len(measurements[0])),Pdy, label='$\dot y$')
+plt.plot(range(len(measurements[0])),Px, label='$x$')
+plt.plot(range(len(measurements[0])),Py, label='$y$')
+plt.plot(range(len(measurements[0])),Pdx, label='$\dot x$')
+plt.plot(range(len(measurements[0])),Pdy, label='$\dot y$')
 
 plt.xlabel('Filter Step')
 plt.ylabel('')
@@ -430,7 +429,7 @@ plt.xlabel('X')
 plt.ylabel('Y')
 plt.title('Position')
 plt.legend(loc='best')
-axis('equal')
+plt.axis('equal')
 
 # <headingcell level=1>
 

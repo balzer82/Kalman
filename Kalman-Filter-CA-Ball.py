@@ -12,7 +12,11 @@ from scipy.stats import norm
 
 # <headingcell level=1>
 
-# Kalman Filter Implementation for Constant Acceleration Model (CA) in Python
+# Multidimensional Kalman Filter
+
+# <headingcell level=2>
+
+# for a Constant Acceleration Model (CA)
 
 # <markdowncell>
 
@@ -55,7 +59,7 @@ YouTubeVideo("tIIJME8-au8")
 
 # <codecell>
 
-P = 10.0*np.eye(9)
+P = 100.0*np.eye(9)
 
 fig = plt.figure(figsize=(6, 6))
 im = plt.imshow(P, interpolation="none", cmap=plt.get_cmap('binary'))
@@ -82,6 +86,9 @@ plt.colorbar(im, cax=cax)
 
 
 plt.tight_layout()
+
+# <codecell>
+
 
 # <headingcell level=2>
 
@@ -123,7 +130,7 @@ print(H, H.shape)
 
 # <codecell>
 
-rp = 0.01**2  # Noise of Position Measurement
+rp = 1.0**2  # Noise of Position Measurement
 R = np.matrix([[rp, 0.0, 0.0],
                [0.0, rp, 0.0],
                [0.0, 0.0, rp]])
@@ -185,7 +192,7 @@ Qs*Qs.T
 
 # <codecell>
 
-sa = 0.01
+sa = 0.1
 G = np.matrix([[1/2.0*dt**2],
                [1/2.0*dt**2],
                [1/2.0*dt**2],
@@ -288,19 +295,19 @@ vx = 10.0 # m/s Velocity at the beginning
 vy = 0.0 # m/s Velocity
 vz = 0.0 # m/s Velocity
 
-c = 0.5 # Drag Resistance Coefficient
+c = 0.1 # Drag Resistance Coefficient
 d = 0.9 # Damping
 
 Xr=[]
 Yr=[]
 Zr=[]
 for i in range(int(m)):
-    accx = c*vx**2  # Drag Resistance
+    accx = -c*vx**2  # Drag Resistance
     
-    vx -= accx*dt
+    vx += accx*dt
     px += vx*dt
 
-    accz = -9.806 - c*vz**2 # Gravitation + Drag
+    accz = -9.806 + c*vz**2 # Gravitation + Drag
     vz += accz*dt
     pz += vz*dt
     
@@ -323,9 +330,9 @@ for i in range(int(m)):
 
 sp= 0.1 # Sigma for position noise
 
-Xm = Xr + sp * (np.random.random(m)-0.5)
-Ym = Yr + sp * (np.random.random(m)-0.5)
-Zm = Zr + sp * (np.random.random(m)-0.5)
+Xm = Xr + sp * (np.random.randn(m))
+Ym = Yr + sp * (np.random.randn(m))
+Zm = Zr + sp * (np.random.randn(m))
 
 # <codecell>
 
@@ -340,7 +347,7 @@ plt.title('Ball Trajectory observed from Computer Vision System (with Noise)')
 #ax.w_xaxis.set_pane_color((1.0, 1.0, 1.0, 1.0))
 
 # Axis equal
-max_range = np.array([Xm.max()-Xm.min(), Ym.max()-Ym.min(), Zm.max()-Zm.min()]).max() / 2.0
+max_range = np.array([Xm.max()-Xm.min(), Ym.max()-Ym.min(), Zm.max()-Zm.min()]).max() / 3.0
 mean_x = Xm.mean()
 mean_y = Ym.mean()
 mean_z = Zm.mean()
@@ -360,7 +367,7 @@ print(measurements.shape)
 
 # <codecell>
 
-x = np.matrix([[Xm[0], Ym[0], Zm[0], 0.0, 0.0, 0.0, -10.0, 0.0,-10.0]]).T
+x = np.matrix([0.0, 0.0, 1.0, 10.0, 0.0, 0.0, 0.0, 0.0, -9.81]).T
 print(x, x.shape)
 
 # <codecell>
@@ -403,11 +410,17 @@ Kddz=[]
 
 # <markdowncell>
 
-# ![Kalman Filter](https://raw.github.com/balzer82/Kalman/master/Kalman-Filter-Step.png)
+# ![Kalman Filter](Kalman-Filter-Step.png)
 
 # <codecell>
 
+hitplate=False
 for filterstep in range(m):
+    
+    # Model the direction switch, when hitting the plate
+    if x[2]<0.01 and not hitplate:
+        x[5]=-x[5]
+        hitplate=True
     
     # Time Update (Prediction)
     # ========================
@@ -432,7 +445,7 @@ for filterstep in range(m):
     
     # Update the error covariance
     P = (I - (K*H))*P
-
+    
    
     
     # Save states for Plotting
@@ -471,9 +484,32 @@ for filterstep in range(m):
 # <codecell>
 
 
-# <headingcell level=2>
+# <headingcell level=1>
 
 # Plots
+
+# <headingcell level=2>
+
+# Estimated State
+
+# <codecell>
+
+fig = plt.figure(figsize=(16,9))
+plt.subplot(211)
+plt.title('Estimated State (elements from vector $x$)')
+plt.plot(range(len(measurements[0])),dxt, label='$\dot x$')
+plt.plot(range(len(measurements[0])),dyt, label='$\dot y$')
+plt.plot(range(len(measurements[0])),dzt, label='$\dot z$')
+plt.legend(loc='best',prop={'size':22})
+
+plt.subplot(212)
+plt.plot(range(len(measurements[0])),ddxt, label='$\ddot x$')
+plt.plot(range(len(measurements[0])),ddyt, label='$\ddot y$')
+plt.plot(range(len(measurements[0])),ddzt, label='$\ddot z$')
+
+plt.xlabel('Filter Step')
+plt.ylabel('')
+plt.legend(loc='best',prop={'size':22})
 
 # <headingcell level=3>
 
@@ -492,6 +528,7 @@ plt.subplot(312)
 plt.plot(range(len(measurements[0])),Pdx, label='$\dot x$')
 plt.plot(range(len(measurements[0])),Pdy, label='$\dot y$')
 plt.plot(range(len(measurements[0])),Pdz, label='$\dot z$')
+plt.legend(loc='best',prop={'size':22})
 
 plt.subplot(313)
 plt.plot(range(len(measurements[0])),Pddx, label='$\ddot x$')
@@ -564,16 +601,16 @@ plt.tight_layout()
 
 fig = plt.figure(figsize=(16,9))
 
-plt.plot(xt,zt, label='Estimate', c='k')
-plt.scatter(Xm,Zm, label='Measurement', c='b', s=30)
-plt.plot(Xr, Zr, label='Real', c='g')
+plt.plot(xt,zt, label='Kalman Filter Estimate')
+plt.scatter(Xm,Zm, label='Measurement', c='gray', s=30)
+plt.plot(Xr, Zr, label='Real')
 plt.title('Estimate of Ball Trajectory (Elements from State Vector $x$)')
 plt.legend(loc='best',prop={'size':22})
 plt.axhline(0, color='k')
 plt.axis('equal')
 plt.xlabel('X ($m$)')
 plt.ylabel('Y ($m$)')
-plt.ylim([0.0, 2.0])
+plt.ylim(0, 2);
 plt.savefig('Kalman-Filter-CA-Ball-StateEstimated.png', dpi=150, bbox_inches='tight')
 
 # <headingcell level=2>
@@ -593,7 +630,7 @@ ax.legend()
 plt.title('Ball Trajectory estimated with Kalman Filter')
 
 # Axis equal
-max_range = np.array([Xm.max()-Xm.min(), Ym.max()-Ym.min(), Zm.max()-Zm.min()]).max() / 2.0
+max_range = np.array([Xm.max()-Xm.min(), Ym.max()-Ym.min(), Zm.max()-Zm.min()]).max() / 3.0
 mean_x = Xm.mean()
 mean_y = Ym.mean()
 mean_z = Zm.mean()
@@ -613,7 +650,10 @@ print('Estimated Position is %.2fm away from ball position.' % dist[-1])
 
 # <markdowncell>
 
-# The Kalman Filter is just for linear dynamic systems. The drag resistance coeficient is nonlinear with a state, but the filter can handle this. But at this time the ball is hitting the ground, the nonlinearity is too much and the filter is providing a wrong solution.
+# The Kalman Filter is just for linear dynamic systems. The drag resistance coefficient is nonlinear with a state, but the filter can handle this until a certain amount of drag.
 # 
-# Probably an Extended Kalman Filter might get a better result, if "hitting the ground" is modelled.
+# But at this time the ball is hitting the ground, the nonlinearity is too much and the filter is providing a wrong solution. Therefore, one have to model a switch in the filter loop, which helps the filter to get it.
+
+# <codecell>
+
 
