@@ -267,7 +267,7 @@ JHs
 
 # <codecell>
 
-varGPS = 6.0 # Variance of GPS Measurement
+varGPS = 6.0 # Standard Deviation of GPS Measurement
 varspeed = 1.0 # Variance of the speed measurement
 varyaw = 0.1 # Variance of the yawrate measurement
 R = np.matrix([[varGPS**2, 0.0, 0.0, 0.0],
@@ -443,12 +443,12 @@ for filterstep in range(m):
                     [float(x[3])],
                     [float(x[4])]])
 
-    if GPS[filterstep]:
+    if GPS[filterstep]: # with 10Hz, every 5th step
         JH = np.matrix([[1.0, 0.0, 0.0, 0.0, 0.0],
                         [0.0, 1.0, 0.0, 0.0, 0.0],
                         [0.0, 0.0, 0.0, 1.0, 0.0],
                         [0.0, 0.0, 0.0, 0.0, 1.0]])
-    else:
+    else: # every other step
         JH = np.matrix([[0.0, 0.0, 0.0, 0.0, 0.0],
                         [0.0, 0.0, 0.0, 0.0, 0.0],
                         [0.0, 0.0, 0.0, 1.0, 0.0],
