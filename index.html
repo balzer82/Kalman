@@ -1,13 +1,13 @@
 <!doctype html>
 <!-- The Time Machine GitHub pages theme was designed and developed by Jon Rohan, on Feb 7, 2012. -->
-<!-- Follow him for fun. http://twitter.com/jonrohan. Tail his code on http://github.com/jonrohan -->
+<!-- Follow him for fun. http://twitter.com/jonrohan. Tail his code on https://github.com/jonrohan -->
 <html>
 <head>
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
 
-  <link rel="stylesheet" href="stylesheets/stylesheet.css" media="screen"/>
-  <link rel="stylesheet" href="stylesheets/pygment_trac.css"/>
+  <link rel="stylesheet" href="stylesheets/stylesheet.css" media="screen">
+  <link rel="stylesheet" href="stylesheets/github-dark.css">
   <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
   <script type="text/javascript" src="javascripts/script.js"></script>
 
@@ -36,29 +36,23 @@
         <span class="blc"></span><span class="trc"></span>
         </div>
         <article class="markdown-body">
-          <h1>
-<a name="multidimensional-kalman-filter" class="anchor" href="#multidimensional-kalman-filter"><span class="octicon octicon-link"></span></a>Multidimensional Kalman-Filter</h1>
-
-<h2>
-<a name="some-python-implementations-of-the-kalman-filter" class="anchor" href="#some-python-implementations-of-the-kalman-filter"><span class="octicon octicon-link"></span></a>Some Python Implementations of the Kalman Filter</h2>
-
-<h4>
-<a name="see-vimeo-for-some-explanations" class="anchor" href="#see-vimeo-for-some-explanations"><span class="octicon octicon-link"></span></a>See <a href="https://vimeo.com/album/2754700/sort:preset/format:detail">Vimeo</a> for some Explanations.</h4>
+          <h4>
+<a id="see-vimeo-for-some-explanations" class="anchor" href="#see-vimeo-for-some-explanations" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>See <a href="https://vimeo.com/album/2754700/sort:preset/format:detail">Vimeo</a> for some Explanations.</h4>
 
 <p><img src="https://raw.githubusercontent.com/balzer82/Kalman/master/Kalman-Filter-Step.png" alt="Kalman Filter Step"></p>
 
 <h3>
-<a name="kalman-filter-with-constant-velocity-model" class="anchor" href="#kalman-filter-with-constant-velocity-model"><span class="octicon octicon-link"></span></a>Kalman Filter with Constant Velocity Model</h3>
+<a id="kalman-filter-with-constant-velocity-model" class="anchor" href="#kalman-filter-with-constant-velocity-model" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Kalman Filter with Constant Velocity Model</h3>
 
 <p>Situation covered: You drive with your car in a tunnel and the GPS signal is lost. Now the car has to determine, where it is in the tunnel. The only information it has, is the velocity in driving direction. The x and y component of the velocity (x˙ and y˙) can be calculated from the absolute velocity (revolutions of the wheels) and the heading of the vehicle (yaw rate sensor).</p>
 
 <p><a href="http://nbviewer.ipython.org/github/balzer82/Kalman/blob/master/Kalman-Filter-CV.ipynb?create=1">View IPython Notebook</a> ~ <a href="https://vimeo.com/87854542">See Vimeo</a></p>
 
 <h3>
-<a name="kalman-filter-with-constant-acceleration-model" class="anchor" href="#kalman-filter-with-constant-acceleration-model"><span class="octicon octicon-link"></span></a>Kalman Filter with Constant Acceleration Model</h3>
+<a id="kalman-filter-with-constant-acceleration-model" class="anchor" href="#kalman-filter-with-constant-acceleration-model" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Kalman Filter with Constant Acceleration Model</h3>
 
 <h4>
-<a name="in-2d" class="anchor" href="#in-2d"><span class="octicon octicon-link"></span></a>in 2D</h4>
+<a id="in-2d" class="anchor" href="#in-2d" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>in 2D</h4>
 
 <p>Situation covered: You have an acceleration sensor (in 2D: $\ddot x¨ and y¨) and try to calculate velocity (x˙ and y˙) as well as position (x and y) of a person holding a smartphone in his/her hand.</p>
 
@@ -70,7 +64,7 @@ Situation covered: You have an acceleration sensor (in 2D: x¨ and y¨) and a Po
 <p><a href="http://nbviewer.ipython.org/github/balzer82/Kalman/blob/master/Kalman-Filter-CA-2.ipynb?create=1">View IPython Notebook</a> ~ <a href="https://vimeo.com/87854540">See Vimeo</a></p>
 
 <h4>
-<a name="in-3d" class="anchor" href="#in-3d"><span class="octicon octicon-link"></span></a>in 3D</h4>
+<a id="in-3d" class="anchor" href="#in-3d" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>in 3D</h4>
 
 <p>Third example is in 3D space, so the state vector is 9D. This model is for ball tracking or something else in 3D space.</p>
 
@@ -79,19 +73,19 @@ Situation covered: You have an acceleration sensor (in 2D: x¨ and y¨) and a Po
 <p><a href="http://nbviewer.ipython.org/github/balzer82/Kalman/blob/master/Kalman-Filter-CA-Ball.ipynb?create=1">View IPython Notebook</a></p>
 
 <h3>
-<a name="adaptive-kalman-filter-with-constant-velocity-model" class="anchor" href="#adaptive-kalman-filter-with-constant-velocity-model"><span class="octicon octicon-link"></span></a>Adaptive Kalman Filter with Constant Velocity Model</h3>
+<a id="adaptive-kalman-filter-with-constant-velocity-model" class="anchor" href="#adaptive-kalman-filter-with-constant-velocity-model" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Adaptive Kalman Filter with Constant Velocity Model</h3>
 
 <p>Here the Measurement Covariance Matrix R is calculated dynamically via the maximum likelihood of the acutal standard deviation of the last measurements.</p>
 
 <p><a href="http://nbviewer.ipython.org/github/balzer82/Kalman/blob/master/Adaptive-Kalman-Filter-CV.ipynb?create=1">View IPython Notebook</a></p>
 
 <h2>
-<a name="extended-kalman-filter" class="anchor" href="#extended-kalman-filter"><span class="octicon octicon-link"></span></a>Extended Kalman Filter</h2>
+<a id="extended-kalman-filter" class="anchor" href="#extended-kalman-filter" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Extended Kalman Filter</h2>
 
 <p><img src="https://raw.githubusercontent.com/balzer82/Kalman/master/Extended-Kalman-Filter-Step.png" alt="EKF Filter Step"></p>
 
 <h3>
-<a name="extended-kalman-filter-with-constant-turn-rate-and-velocity-ctrv-model" class="anchor" href="#extended-kalman-filter-with-constant-turn-rate-and-velocity-ctrv-model"><span class="octicon octicon-link"></span></a>Extended Kalman Filter with Constant Turn Rate and Velocity (CTRV) Model</h3>
+<a id="extended-kalman-filter-with-constant-turn-rate-and-velocity-ctrv-model" class="anchor" href="#extended-kalman-filter-with-constant-turn-rate-and-velocity-ctrv-model" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Extended Kalman Filter with Constant Turn Rate and Velocity (CTRV) Model</h3>
 
 <p>Situation covered: You have an velocity sensor which measures the vehicle speed (v) in heading direction (ψ) and a yaw rate sensor (ψ˙) which both have to fused with the position (x &amp; y) from a GPS sensor.</p>
 
@@ -100,7 +94,7 @@ Situation covered: You have an acceleration sensor (in 2D: x¨ and y¨) and a Po
 <p><a href="http://nbviewer.ipython.org/github/balzer82/Kalman/blob/master/Extended-Kalman-Filter-CTRV.ipynb?create=1">View IPython Notebook</a> ~ <a href="https://vimeo.com/88057157">See Vimeo</a></p>
 
 <h2>
-<a name="license" class="anchor" href="#license"><span class="octicon octicon-link"></span></a>License</h2>
+<a id="license" class="anchor" href="#license" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>License</h2>
 
 <p><code>CC-BY-SA2.0 Lizenz</code></p>
         </article>
@@ -108,12 +102,12 @@ Situation covered: You have an acceleration sensor (in 2D: x¨ and y¨) and a Po
     </div>
     <footer>
       <div class="owner">
-      <p><a href="https://github.com/balzer82" class="avatar"><img src="https://avatars0.githubusercontent.com/u/3329893?s=60" width="48" height="48"/></a> <a href="https://github.com/balzer82">balzer82</a> maintains <a href="https://github.com/balzer82/Kalman">Kalman</a></p>
+      <p><a href="https://github.com/balzer82" class="avatar"><img src="https://avatars3.githubusercontent.com/u/3329893?v=3&amp;s=60" width="48" height="48"></a> <a href="https://github.com/balzer82">balzer82</a> maintains <a href="https://github.com/balzer82/Kalman">Kalman</a></p>
 
 
       </div>
       <div class="creds">
-        <small>This page generated using <a href="http://pages.github.com/">GitHub Pages</a><br/>theme by <a href="https://twitter.com/jonrohan/">Jon Rohan</a></small>
+        <small>This page generated using <a href="https://pages.github.com/">GitHub Pages</a><br>theme by <a href="https://twitter.com/jonrohan/">Jon Rohan</a></small>
       </div>
     </footer>
   </div>
