@@ -1,17 +1,15 @@
-# -*- coding: utf-8 -*-
-# <nbformat>3.0</nbformat>
 
-# <codecell>
+# coding: utf-8
+
+# In[1]:
 
 import numpy as np
+get_ipython().magic(u'matplotlib inline')
 import matplotlib.pyplot as plt
 from scipy.stats import norm
 
-# <headingcell level=1>
 
-# Kalman Filter Implementation for Constant Acceleration Model (CA) in Python
-
-# <markdowncell>
+# # Kalman Filter Implementation for Constant Acceleration Model (CA) in Python
 
 # Situation covered: You have an acceleration sensor (in 2D: $\ddot x$ and $\ddot y$) and a Position Sensor (e.g. GPS) and try to calculate velocity ($\dot x$ and $\dot y$) as well as position ($x$ and $y$) of a person holding a smartphone in his/her hand.
 # 
@@ -19,18 +17,13 @@ from scipy.stats import norm
 # 
 # unter CC BY-NC 2.0 von flickr.com von Canadian Pacific
 
-# <headingcell level=2>
-
-# State Vector - Constant Acceleration
-
-# <markdowncell>
+# ## State Vector - Constant Acceleration
 
 # Constant Acceleration Model for Ego Motion in Plane
 # 
 # $$x= \left[ \matrix{ x \\ y \\ \dot x \\ \dot y \\ \ddot x \\ \ddot y} \right]$$
 # 
-
-# <markdowncell>
+# 
 
 # Formal Definition:
 # 
@@ -46,11 +39,9 @@ from scipy.stats import norm
 # 
 # $$y = \begin{bmatrix}1 & 0 & 0 & 0 & 0 & 0 \\0 & 1 & 0 & 0 & 0 & 0 \\ 0 & 0 & 0 & 0 & 1 & 0 \\ 0 & 0 & 0 & 0 & 0 & 1\end{bmatrix} \cdot x$$
 
-# <headingcell level=4>
+# #### Initial State
 
-# Initial State
-
-# <codecell>
+# In[2]:
 
 x = np.matrix([[0.0, 0.0, 0.0, 0.0, 0.0, 0.0]]).T
 print(x, x.shape)
@@ -58,11 +49,10 @@ n=x.size # States
 plt.scatter(float(x[0]),float(x[1]), s=100)
 plt.title('Initial Location')
 
-# <headingcell level=4>
 
-# Initial Uncertainty
+# #### Initial Uncertainty
 
-# <codecell>
+# In[3]:
 
 P = 10.0*np.eye(6)
 print(P, P.shape)
@@ -71,17 +61,17 @@ print(P, P.shape)
 fig = plt.figure(figsize=(6, 6))
 im = plt.imshow(P, interpolation="none", cmap=plt.get_cmap('binary'))
 plt.title('Initial Covariance Matrix $P$')
-ylocs, ylabels = yticks()
+ylocs, ylabels = plt.yticks()
 # set the locations of the yticks
-yticks(arange(7))
+plt.yticks(np.arange(7))
 # set the locations and labels of the yticks
-yticks(arange(6),('$x$', '$y$', '$\dot x$', '$\dot y$', '$\ddot x$', '$\ddot y$'), fontsize=22)
+plt.yticks(np.arange(6),('$x$', '$y$', '$\dot x$', '$\dot y$', '$\ddot x$', '$\ddot y$'), fontsize=22)
 
-xlocs, xlabels = xticks()
+xlocs, xlabels = plt.xticks()
 # set the locations of the yticks
-xticks(arange(7))
+plt.xticks(np.arange(7))
 # set the locations and labels of the yticks
-xticks(arange(6),('$x$', '$y$', '$\dot x$', '$\dot y$', '$\ddot x$', '$\ddot y$'), fontsize=22)
+plt.xticks(np.arange(6),('$x$', '$y$', '$\dot x$', '$\dot y$', '$\ddot x$', '$\ddot y$'), fontsize=22)
 
 plt.xlim([-0.5,5.5])
 plt.ylim([5.5, -0.5])
@@ -94,22 +84,21 @@ plt.colorbar(im, cax=cax)
 
 plt.tight_layout()
 
-# <headingcell level=2>
 
-# Dynamic Matrix
-
-# <markdowncell>
+# ## Dynamic Matrix
 
 # It is calculated from the dynamics of the Egomotion.
 # 
 # $$x_{k+1} = x_{k} + \dot x_{k} \cdot \Delta t +  \ddot x_k \cdot \frac{1}{2}\Delta t^2$$
 # $$y_{k+1} = y_{k} + \dot y_{k} \cdot \Delta t +  \ddot y_k \cdot \frac{1}{2}\Delta t^2$$
+# 
 # $$\dot x_{k+1} = \dot x_{k} + \ddot x \cdot \Delta t$$
 # $$\dot y_{k+1} = \dot y_{k} + \ddot y \cdot \Delta t$$
+# 
 # $$\ddot x_{k+1} = \ddot x_{k}$$
 # $$\ddot y_{k+1} = \ddot y_{k}$$
 
-# <codecell>
+# In[4]:
 
 dt = 0.1 # Time Step between Filter Steps
 
@@ -121,15 +110,12 @@ A = np.matrix([[1.0, 0.0, dt, 0.0, 1/2.0*dt**2, 0.0],
               [0.0, 0.0, 0.0, 0.0, 0.0, 1.0]])
 print(A, A.shape)
 
-# <headingcell level=2>
 
-# Measurement Matrix
-
-# <markdowncell>
+# ## Measurement Matrix
 
 # Here you can determine, which of the states is covered by a measurement. In this example, the position ($x$ and $y$) as well as the acceleration is measured ($\ddot x$ and $\ddot y$).
 
-# <codecell>
+# In[5]:
 
 H = np.matrix([[1.0, 0.0, 0.0, 0.0, 0.0, 0.0],
                [0.0, 1.0, 0.0, 0.0, 0.0, 0.0],
@@ -137,11 +123,10 @@ H = np.matrix([[1.0, 0.0, 0.0, 0.0, 0.0, 0.0],
               [0.0, 0.0, 0.0, 0.0, 0.0, 1.0]])
 print(H, H.shape)
 
-# <headingcell level=2>
 
-# Measurement Noise Covariance R
+# ## Measurement Noise Covariance R
 
-# <codecell>
+# In[6]:
 
 ra = 10.0**2   # Noise of Acceleration Measurement
 rp = 100.0**2  # Noise of Position Measurement
@@ -154,17 +139,17 @@ print(R, R.shape)
 fig = plt.figure(figsize=(6, 6))
 im = plt.imshow(R, interpolation="none", cmap=plt.get_cmap('binary'))
 plt.title('Measurement Noise Covariance Matrix $R$')
-ylocs, ylabels = yticks()
+ylocs, ylabels = plt.yticks()
 # set the locations of the yticks
-yticks(arange(5))
+plt.yticks(np.arange(5))
 # set the locations and labels of the yticks
-yticks(arange(4),('$x$', '$y$', '$\ddot x$', '$\ddot y$'), fontsize=22)
+plt.yticks(np.arange(4),('$x$', '$y$', '$\ddot x$', '$\ddot y$'), fontsize=22)
 
-xlocs, xlabels = xticks()
+xlocs, xlabels = plt.xticks()
 # set the locations of the yticks
-xticks(arange(5))
+plt.xticks(np.arange(5))
 # set the locations and labels of the yticks
-xticks(arange(4),('$x$', '$y$', '$\ddot x$', '$\ddot y$'), fontsize=22)
+plt.xticks(np.arange(4),('$x$', '$y$', '$\ddot x$', '$\ddot y$'), fontsize=22)
 
 plt.xlim([-0.5,3.5])
 plt.ylim([3.5, -0.5])
@@ -176,11 +161,8 @@ plt.colorbar(im, cax=cax)
 
 plt.tight_layout()
 
-# <headingcell level=2>
 
-# Process Noise Covariance Matrix Q for CA Model
-
-# <markdowncell>
+# ## Process Noise Covariance Matrix Q for CA Model
 
 # The Position of an object can be influenced by a force (e.g. wind), which leads to an acceleration disturbance (noise). This process noise has to be modeled with the process noise covariance matrix Q.
 # 
@@ -194,11 +176,9 @@ plt.tight_layout()
 # 
 # with $G = \begin{bmatrix}0.5dt^2 & 0.5dt^2 & dt & dt & 1.0 & 1.0\end{bmatrix}^T$ and $\sigma_a$ as the acceleration process noise.
 
-# <headingcell level=4>
+# #### Symbolic Calculation
 
-# Symbolic Calculation
-
-# <codecell>
+# In[7]:
 
 from sympy import Symbol, Matrix
 from sympy.interactive import printing
@@ -207,7 +187,8 @@ dts = Symbol('\Delta t')
 Qs = Matrix([[0.5*dts**2],[0.5*dts**2],[dts],[dts],[1.0],[1.0]])
 Qs*Qs.T
 
-# <codecell>
+
+# In[8]:
 
 sa = 0.001
 G = np.matrix([[1/2.0*dt**2],
@@ -220,22 +201,23 @@ Q = G*G.T*sa**2
 
 print(Q, Q.shape)
 
-# <codecell>
+
+# In[9]:
 
 fig = plt.figure(figsize=(6, 6))
 im = plt.imshow(Q, interpolation="none", cmap=plt.get_cmap('binary'))
 plt.title('Process Noise Covariance Matrix $Q$')
-ylocs, ylabels = yticks()
+ylocs, ylabels = plt.yticks()
 # set the locations of the yticks
-yticks(arange(7))
+plt.yticks(np.arange(7))
 # set the locations and labels of the yticks
-yticks(arange(6),('$x$', '$y$', '$\dot x$', '$\dot y$', '$\ddot x$', '$\ddot y$'), fontsize=22)
+plt.yticks(np.arange(6),('$x$', '$y$', '$\dot x$', '$\dot y$', '$\ddot x$', '$\ddot y$'), fontsize=22)
 
-xlocs, xlabels = xticks()
+xlocs, xlabels = plt.xticks()
 # set the locations of the yticks
-xticks(arange(7))
+plt.xticks(np.arange(7))
 # set the locations and labels of the yticks
-xticks(arange(6),('$x$', '$y$', '$\dot x$', '$\dot y$', '$\ddot x$', '$\ddot y$'), fontsize=22)
+plt.xticks(np.arange(6),('$x$', '$y$', '$\dot x$', '$\dot y$', '$\ddot x$', '$\ddot y$'), fontsize=22)
 
 plt.xlim([-0.5,5.5])
 plt.ylim([5.5, -0.5])
@@ -247,24 +229,20 @@ plt.colorbar(im, cax=cax)
 
 plt.tight_layout()
 
-# <headingcell level=2>
 
-# Identity Matrix
+# ## Identity Matrix
 
-# <codecell>
+# In[10]:
 
 I = np.eye(n)
 print(I, I.shape)
 
-# <headingcell level=2>
 
-# Measurements
+# ## Measurements
 
-# <headingcell level=4>
+# #### Position (every 10th of an acceleration measurement, there is a new position measurement from GPS)
 
-# Position (every 10th of an acceleration measurement, there is a new position measurement from GPS)
-
-# <codecell>
+# In[11]:
 
 m = 500 # Measurements
 
@@ -286,11 +264,10 @@ for i in range(1,m):
         mpy[i]=mpy[i-1]
         GPS[i]=False
 
-# <headingcell level=4>
 
-# Acceleration
+# #### Acceleration
 
-# <codecell>
+# In[12]:
 
 # Acceleration
 sa= 0.1 # Sigma for acceleration
@@ -300,13 +277,15 @@ ay= 0.0 # in Y
 mx = np.array(ax+sa*np.random.randn(m))
 my = np.array(ay+sa*np.random.randn(m))
 
-# <codecell>
+
+# In[13]:
 
 measurements = np.vstack((mpx,mpy,mx,my))
 
 print(measurements.shape)
 
-# <codecell>
+
+# In[14]:
 
 fig = plt.figure(figsize=(16,9))
 plt.subplot(211)
@@ -327,7 +306,8 @@ plt.legend(loc='best',prop={'size':18})
 
 plt.savefig('Kalman-Filter-CA-Measurements.png', dpi=72, transparent=True, bbox_inches='tight')
 
-# <codecell>
+
+# In[15]:
 
 # Preallocation for Plotting
 xt = []
@@ -351,15 +331,12 @@ Kdy= []
 Kddx=[]
 Kddy=[]
 
-# <headingcell level=2>
 
-# Kalman Filter
-
-# <markdowncell>
+# ## Kalman Filter
 
 # ![Kalman Filter](https://raw.github.com/balzer82/Kalman/master/Kalman-Filter-Step.png)
 
-# <codecell>
+# In[16]:
 
 for filterstep in range(m):
     
@@ -413,18 +390,17 @@ for filterstep in range(m):
     Kddx.append(float(K[4,0]))
     Kddy.append(float(K[5,0]))
 
-# <codecell>
+
+# In[ ]:
 
 
-# <headingcell level=2>
 
-# Plots
 
-# <headingcell level=3>
+# ## Plots
 
-# Uncertainty
+# ### Uncertainty
 
-# <codecell>
+# In[17]:
 
 fig = plt.figure(figsize=(16,9))
 plt.subplot(211)
@@ -440,11 +416,10 @@ plt.xlabel('Filter Step')
 plt.ylabel('')
 plt.legend(loc='best',prop={'size':22})
 
-# <headingcell level=3>
 
-# Kalman Gains
+# ### Kalman Gains
 
-# <codecell>
+# In[18]:
 
 fig = plt.figure(figsize=(16,9))
 plt.plot(range(len(measurements[0])),Kx, label='Kalman Gain for $x$')
@@ -459,26 +434,25 @@ plt.ylabel('')
 plt.title('Kalman Gain (the lower, the more the measurement fullfill the prediction)')
 plt.legend(loc='best',prop={'size':18})
 
-# <headingcell level=3>
 
-# Covariance Matrix
+# ### Covariance Matrix
 
-# <codecell>
+# In[19]:
 
 fig = plt.figure(figsize=(6, 6))
 im = plt.imshow(P, interpolation="none", cmap=plt.get_cmap('binary'))
 plt.title('Covariance Matrix $P$ (after %i Filter Steps)' % (m))
-ylocs, ylabels = yticks()
+ylocs, ylabels = plt.yticks()
 # set the locations of the yticks
-yticks(arange(7))
+plt.yticks(np.arange(7))
 # set the locations and labels of the yticks
-yticks(arange(6),('$x$', '$y$', '$\dot x$', '$\dot y$', '$\ddot x$', '$\ddot y$'), fontsize=22)
+plt.yticks(np.arange(6),('$x$', '$y$', '$\dot x$', '$\dot y$', '$\ddot x$', '$\ddot y$'), fontsize=22)
 
-xlocs, xlabels = xticks()
+xlocs, xlabels = plt.xticks()
 # set the locations of the yticks
-xticks(arange(7))
+plt.xticks(np.arange(7))
 # set the locations and labels of the yticks
-xticks(arange(6),('$x$', '$y$', '$\dot x$', '$\dot y$', '$\ddot x$', '$\ddot y$'), fontsize=22)
+plt.xticks(np.arange(6),('$x$', '$y$', '$\dot x$', '$\dot y$', '$\ddot x$', '$\ddot y$'), fontsize=22)
 
 plt.xlim([-0.5,5.5])
 plt.ylim([5.5, -0.5])
@@ -492,11 +466,10 @@ plt.colorbar(im, cax=cax)
 plt.tight_layout()
 plt.savefig('Kalman-Filter-CA-CovarianceMatrix.png', dpi=72, transparent=True, bbox_inches='tight')
 
-# <headingcell level=2>
 
-# State Vector
+# ## State Vector
 
-# <codecell>
+# In[20]:
 
 fig = plt.figure(figsize=(16,16))
 
@@ -530,11 +503,10 @@ plt.ylim([-1,1])
 
 plt.savefig('Kalman-Filter-CA-StateEstimated.png', dpi=72, transparent=True, bbox_inches='tight')
 
-# <headingcell level=2>
 
-# Position x/y
+# ## Position x/y
 
-# <codecell>
+# In[21]:
 
 fig = plt.figure(figsize=(16,16))
 plt.plot(xt,yt, label='State',alpha=0.5)
@@ -549,16 +521,13 @@ plt.xlim([-20, 20])
 plt.ylim([-20, 20])
 plt.savefig('Kalman-Filter-CA-Position.png', dpi=72, transparent=True, bbox_inches='tight')
 
-# <headingcell level=1>
 
-# Conclusion
+# # Conclusion
 
-# <codecell>
+# In[22]:
 
 dist=np.cumsum(np.sqrt(np.diff(xt)**2 + np.diff(yt)**2))
 print('Your drifted %d units from origin.' % dist[-1])
 
-# <markdowncell>
 
 # As you can see, good idea to measure the position as well as the acceleration to try to estimate the position.
-

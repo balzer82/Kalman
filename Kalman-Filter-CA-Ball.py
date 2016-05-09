@@ -1,43 +1,34 @@
-# -*- coding: utf-8 -*-
-# <nbformat>3.0</nbformat>
 
-# <codecell>
+# coding: utf-8
+
+# In[1]:
 
 import numpy as np
+get_ipython().magic(u'matplotlib inline')
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 from IPython.display import YouTubeVideo
 from scipy.stats import norm
-%pylab inline --no-import-all
 
-# <headingcell level=1>
 
-# Multidimensional Kalman Filter
+# # Multidimensional Kalman Filter
 
-# <headingcell level=2>
-
-# for a Constant Acceleration Model (CA)
-
-# <markdowncell>
+# ## for a Constant Acceleration Model (CA)
 
 # Situation covered: You have a Position Sensor (e.g. a Vision System) and try to calculate velocity ($\dot x$ and $\dot y$) as well as position ($x$ and $y$) of a ball in 3D space.
 
-# <codecell>
+# In[2]:
 
 YouTubeVideo("tIIJME8-au8")
 
-# <headingcell level=2>
 
-# State Vector - Constant Acceleration
-
-# <markdowncell>
+# ## State Vector - Constant Acceleration
 
 # Constant Acceleration Model for Motion in 3D
 # 
 # $$x= \left[ \matrix{ x \\ y \\ z \\ \dot x \\ \dot y \\ \dot z \\ \ddot x \\ \ddot y \\ \ddot z} \right]$$
 # 
-
-# <markdowncell>
+# 
 
 # Formal Definition:
 # 
@@ -53,11 +44,9 @@ YouTubeVideo("tIIJME8-au8")
 # 
 # $$y = \begin{bmatrix}1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\ 0 & 1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\ 0 & 0 & 1 & 0 & 0 & 0 & 0 & 0 & 0 \end{bmatrix} \cdot x$$
 
-# <headingcell level=4>
+# #### Initial Uncertainty
 
-# Initial Uncertainty
-
-# <codecell>
+# In[3]:
 
 P = 100.0*np.eye(9)
 
@@ -87,14 +76,15 @@ plt.colorbar(im, cax=cax)
 
 plt.tight_layout()
 
-# <codecell>
+
+# In[ ]:
 
 
-# <headingcell level=2>
 
-# Dynamic Matrix
 
-# <codecell>
+# ## Dynamic Matrix
+
+# In[4]:
 
 dt = 0.01 # Time Step between Filter Steps
 
@@ -109,26 +99,22 @@ A = np.matrix([[1.0, 0.0, 0.0, dt, 0.0, 0.0, 1/2.0*dt**2, 0.0, 0.0],
               [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0]])
 print(A.shape)
 
-# <headingcell level=2>
 
-# Measurement Matrix
-
-# <markdowncell>
+# ## Measurement Matrix
 
 # Here you can determine, which of the states is covered by a measurement. In this example, the position ($x$ and $y$) is measured.
 
-# <codecell>
+# In[5]:
 
 H = np.matrix([[1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
                [0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
                [0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]])
 print(H, H.shape)
 
-# <headingcell level=2>
 
-# Measurement Noise Covariance Matrix $R$
+# ## Measurement Noise Covariance Matrix $R$
 
-# <codecell>
+# In[6]:
 
 rp = 1.0**2  # Noise of Position Measurement
 R = np.matrix([[rp, 0.0, 0.0],
@@ -161,11 +147,8 @@ plt.colorbar(im, cax=cax)
 
 plt.tight_layout()
 
-# <headingcell level=2>
 
-# Process Noise Covariance Matrix $Q$ for CA Model
-
-# <markdowncell>
+# ## Process Noise Covariance Matrix $Q$ for CA Model
 
 # The Position of the ball can be influenced by a force (e.g. wind), which leads to an acceleration disturbance (noise). This process noise has to be modeled with the process noise covariance matrix Q.
 # 
@@ -177,11 +160,9 @@ plt.tight_layout()
 # 
 # with $G = \begin{bmatrix}0.5dt^2 & 0.5dt^2 & 0.5dt^2 & dt & dt & dt & 1.0 &1.0 & 1.0\end{bmatrix}^T$ and $\sigma_a$ as the acceleration process noise.
 
-# <headingcell level=4>
+# #### Symbolic Calculation
 
-# Symbolic Calculation
-
-# <codecell>
+# In[7]:
 
 from sympy import Symbol, Matrix
 from sympy.interactive import printing
@@ -190,7 +171,8 @@ dts = Symbol('\Delta t')
 Qs = Matrix([[0.5*dts**2],[0.5*dts**2],[0.5*dts**2],[dts],[dts],[dts],[1.0],[1.0],[1.0]])
 Qs*Qs.T
 
-# <codecell>
+
+# In[8]:
 
 sa = 0.1
 G = np.matrix([[1/2.0*dt**2],
@@ -206,7 +188,8 @@ Q = G*G.T*sa**2
 
 print(Q.shape)
 
-# <codecell>
+
+# In[9]:
 
 fig = plt.figure(figsize=(6, 6))
 im = plt.imshow(Q, interpolation="none", cmap=plt.get_cmap('binary'))
@@ -234,11 +217,10 @@ plt.colorbar(im, cax=cax)
 
 plt.tight_layout()
 
-# <headingcell level=2>
 
-# Disturbance Control Matrix $B$
+# ## Disturbance Control Matrix $B$
 
-# <codecell>
+# In[10]:
 
 B = np.matrix([[0.0],
                [0.0],
@@ -251,36 +233,29 @@ B = np.matrix([[0.0],
                [0.0]])
 print(B, B.shape)
 
-# <headingcell level=2>
 
-# Control Input $u$
-
-# <markdowncell>
+# ## Control Input $u$
 
 # Assumed constant over time
 
-# <codecell>
+# In[11]:
 
 u = 0.0
 
-# <headingcell level=2>
 
-# Identity Matrix
+# ## Identity Matrix
 
-# <codecell>
+# In[12]:
 
 I = np.eye(9)
 print(I, I.shape)
 
-# <headingcell level=2>
 
-# Measurements
-
-# <markdowncell>
+# ## Measurements
 
 # Synthetically creation of the Position Data for the ball
 
-# <codecell>
+# In[13]:
 
 Hz = 100.0 # Frequency of Vision System
 dt = 1.0/Hz
@@ -322,11 +297,10 @@ for i in range(int(m)):
     Yr.append(py)
     Zr.append(pz)
 
-# <headingcell level=3>
 
-# Add Noise to the Real Position
+# ### Add Noise to the Real Position
 
-# <codecell>
+# In[14]:
 
 sp= 0.1 # Sigma for position noise
 
@@ -334,7 +308,8 @@ Xm = Xr + sp * (np.random.randn(m))
 Ym = Yr + sp * (np.random.randn(m))
 Zm = Zr + sp * (np.random.randn(m))
 
-# <codecell>
+
+# In[15]:
 
 fig = plt.figure(figsize=(16,9))
 ax = fig.add_subplot(111, projection='3d')
@@ -356,21 +331,22 @@ ax.set_ylim(mean_y - max_range, mean_y + max_range)
 ax.set_zlim(mean_z - max_range, mean_z + max_range)
 #plt.savefig('BallTrajectory-Computervision.png', dpi=150, bbox_inches='tight')
 
-# <codecell>
+
+# In[16]:
 
 measurements = np.vstack((Xm,Ym,Zm))
 print(measurements.shape)
 
-# <headingcell level=4>
 
-# Initial State
+# #### Initial State
 
-# <codecell>
+# In[17]:
 
 x = np.matrix([0.0, 0.0, 1.0, 10.0, 0.0, 0.0, 0.0, 0.0, -9.81]).T
 print(x, x.shape)
 
-# <codecell>
+
+# In[18]:
 
 # Preallocation for Plotting
 xt = []
@@ -404,15 +380,12 @@ Kddx=[]
 Kddy=[]
 Kddz=[]
 
-# <headingcell level=2>
 
-# Kalman Filter
-
-# <markdowncell>
+# ## Kalman Filter
 
 # ![Kalman Filter](Kalman-Filter-Step.png)
 
-# <codecell>
+# In[19]:
 
 hitplate=False
 for filterstep in range(m):
@@ -481,18 +454,17 @@ for filterstep in range(m):
     Kddy.append(float(K[7,0]))
     Kddz.append(float(K[8,0]))
 
-# <codecell>
+
+# In[ ]:
 
 
-# <headingcell level=1>
 
-# Plots
 
-# <headingcell level=2>
+# # Plots
 
-# Estimated State
+# ## Estimated State
 
-# <codecell>
+# In[20]:
 
 fig = plt.figure(figsize=(16,9))
 plt.subplot(211)
@@ -511,11 +483,10 @@ plt.xlabel('Filter Step')
 plt.ylabel('')
 plt.legend(loc='best',prop={'size':22})
 
-# <headingcell level=3>
 
-# Uncertainty
+# ### Uncertainty
 
-# <codecell>
+# In[21]:
 
 fig = plt.figure(figsize=(16,9))
 plt.subplot(311)
@@ -539,11 +510,10 @@ plt.xlabel('Filter Step')
 plt.ylabel('')
 plt.legend(loc='best',prop={'size':22})
 
-# <headingcell level=3>
 
-# Kalman Gains
+# ### Kalman Gains
 
-# <codecell>
+# In[22]:
 
 fig = plt.figure(figsize=(16,9))
 plt.plot(range(len(measurements[0])),Kx, label='Kalman Gain for $x$')
@@ -561,11 +531,10 @@ plt.ylabel('')
 plt.title('Kalman Gain (the lower, the more the measurement fullfill the prediction)')
 plt.legend(loc='best',prop={'size':18})
 
-# <headingcell level=3>
 
-# Covariance Matrix
+# ### Covariance Matrix
 
-# <codecell>
+# In[23]:
 
 fig = plt.figure(figsize=(6, 6))
 im = plt.imshow(P, interpolation="none", cmap=plt.get_cmap('binary'))
@@ -593,11 +562,10 @@ plt.colorbar(im, cax=cax)
 
 plt.tight_layout()
 
-# <headingcell level=2>
 
-# Position in x/z Plane
+# ## Position in x/z Plane
 
-# <codecell>
+# In[24]:
 
 fig = plt.figure(figsize=(16,9))
 
@@ -613,11 +581,10 @@ plt.ylabel('Y ($m$)')
 plt.ylim(0, 2);
 plt.savefig('Kalman-Filter-CA-Ball-StateEstimated.png', dpi=150, bbox_inches='tight')
 
-# <headingcell level=2>
 
-# Position in 3D
+# ## Position in 3D
 
-# <codecell>
+# In[25]:
 
 fig = plt.figure(figsize=(16,9))
 ax = fig.add_subplot(111, projection='3d')
@@ -639,21 +606,17 @@ ax.set_ylim(mean_y - max_range, mean_y + max_range)
 ax.set_zlim(mean_z - max_range, mean_z + max_range)
 plt.savefig('Kalman-Filter-CA-Ball-Trajectory.png', dpi=150, bbox_inches='tight')
 
-# <headingcell level=1>
 
-# Conclusion
+# # Conclusion
 
-# <codecell>
+# In[26]:
 
 dist = np.sqrt((Xm-xt)**2 + (Ym-yt)**2 + (Zm-zt)**2)
 print('Estimated Position is %.2fm away from ball position.' % dist[-1])
 
-# <markdowncell>
 
 # The Kalman Filter is just for linear dynamic systems. The drag resistance coefficient is nonlinear with a state, but the filter can handle this until a certain amount of drag.
 # 
 # But at this time the ball is hitting the ground, the nonlinearity is too much and the filter is providing a wrong solution. Therefore, one have to model a switch in the filter loop, which helps the filter to get it.
 
-# <codecell>
-
-
+# Fragen? [@Balzer82](https://twitter.com/balzer82)

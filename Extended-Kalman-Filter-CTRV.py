@@ -1,26 +1,21 @@
-# -*- coding: utf-8 -*-
-# <nbformat>3.0</nbformat>
 
-# <codecell>
+# coding: utf-8
+
+# In[1]:
 
 import numpy as np
+get_ipython().magic(u'matplotlib inline')
 import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
 from scipy.stats import norm
 from sympy import Symbol, symbols, Matrix, sin, cos
-from sympy.interactive import printing
-printing.init_printing()
-%pylab inline --no-import-all
+from sympy import init_printing
+init_printing(use_latex=True)
 
-# <headingcell level=1>
 
-# Extended Kalman Filter Implementation for Constant Turn Rate and Velocity (CTRV) Vehicle Model in Python
-
-# <markdowncell>
+# # Extended Kalman Filter Implementation for Constant Turn Rate and Velocity (CTRV) Vehicle Model in Python
 
 # ![Extended Kalman Filter Step](Extended-Kalman-Filter-Step.png)
-
-# <markdowncell>
 
 # [Wikipedia](http://en.wikipedia.org/wiki/Extended_Kalman_filter) writes: In the extended Kalman filter, the state transition and observation models need not be linear functions of the state but may instead be differentiable functions.
 # 
@@ -34,34 +29,28 @@ printing.init_printing()
 # 
 # At each time step, the Jacobian is evaluated with current predicted states. These matrices can be used in the Kalman filter equations. This process essentially linearizes the non-linear function around the current estimate.
 
-# <markdowncell>
-
 # Situation covered: You have a velocity sensor, which measures the vehicle speed ($v$) in heading direction ($\psi$) and a yaw rate sensor ($\dot \psi$) which both have to fused with the position ($x$ & $y$) from a GPS sensor.
 
-# <headingcell level=2>
-
-# State Vector - Constant Turn Rate and Velocity Vehicle Model (CTRV)
-
-# <markdowncell>
+# ## State Vector - Constant Turn Rate and Velocity Vehicle Model (CTRV)
 
 # Constant Turn Rate, Constant Velocity Model for a vehicle ![CTRV Model](CTRV-Model.png)
 # 
 # $$x_k= \left[ \matrix{ x \\ y \\ \psi \\ v \\ \dot\psi} \right] = \left[ \matrix{ \text{Position X} \\ \text{Position Y} \\ \text{Heading} \\ \text{Velocity} \\ \text{Yaw Rate}} \right]$$
 
-# <codecell>
+# In[2]:
 
 numstates=5 # States
 
-# <codecell>
+
+# In[3]:
 
 dt = 1.0/50.0 # Sample Rate of the Measurements is 50Hz
 dtGPS=1.0/10.0 # Sample Rate of GPS is 10Hz
 
-# <markdowncell>
 
 # All symbolic calculations are made with [Sympy](http://nbviewer.ipython.org/github/jrjohansson/scientific-python-lectures/blob/master/Lecture-5-Sympy.ipynb). Thanks!
 
-# <codecell>
+# In[4]:
 
 vs, psis, dpsis, dts, xs, ys, lats, lons = symbols('v \psi \dot\psi T x y lat lon')
 
@@ -72,45 +61,37 @@ gs = Matrix([[xs+(vs/dpsis)*(sin(psis+dpsis*dts)-sin(psis))],
              [dpsis]])
 state = Matrix([xs,ys,psis,vs,dpsis])
 
-# <headingcell level=2>
 
-# Dynamic Matrix
-
-# <markdowncell>
+# ## Dynamic Matrix
 
 # This formulas calculate how the state is evolving from one to the next time step
 
-# <codecell>
+# In[5]:
 
 gs
 
-# <headingcell level=3>
 
-# Calculate the Jacobian of the Dynamic Matrix with respect to the state vector
+# ### Calculate the Jacobian of the Dynamic Matrix with respect to the state vector
 
-# <codecell>
+# In[6]:
 
 state
 
-# <codecell>
+
+# In[7]:
 
 gs.jacobian(state)
 
-# <markdowncell>
 
 # It has to be computed on every filter step because it consists of state variables!
 # 
 # To Sympy Team: A `.to_python` and `.to_c` and `.to_matlab` whould be nice to generate code, like it already works with `print latex()`.
 
-# <headingcell level=2>
-
-# Initial Uncertainty $P_0$
-
-# <markdowncell>
+# ## Initial Uncertainty $P_0$
 
 # Initialized with $0$ means you are pretty sure where the vehicle starts
 
-# <codecell>
+# In[8]:
 
 P = np.diag([1000.0, 1000.0, 1000.0, 1000.0, 1000.0])
 print(P, P.shape)
@@ -141,15 +122,12 @@ plt.colorbar(im, cax=cax)
 
 plt.tight_layout()
 
-# <headingcell level=2>
 
-# Process Noise Covariance Matrix Q
-
-# <markdowncell>
+# ## Process Noise Covariance Matrix Q
 
 # "*The state uncertainty model models the disturbances which excite the linear system. Conceptually, it estimates how bad things can get when the system is run open loop for a given period of time.*" - Kelly, A. (1994). A 3D state space formulation of a navigation Kalman filter for autonomous vehicles, (May). Retrieved from http://oai.dtic.mil/oai/oai?verb=getRecord&metadataPrefix=html&identifier=ADA282853
 
-# <codecell>
+# In[9]:
 
 sGPS     = 0.5*8.8*dt**2  # assume 8.8m/s2 as maximum acceleration, forcing the vehicle
 sCourse  = 0.1*dt # assume 0.1rad/s as maximum turn rate for the vehicle
@@ -159,7 +137,8 @@ sYaw     = 1.0*dt # assume 1.0rad/s2 as the maximum turn rate acceleration for t
 Q = np.diag([sGPS**2, sGPS**2, sCourse**2, sVelocity**2, sYaw**2])
 print(Q, Q.shape)
 
-# <codecell>
+
+# In[10]:
 
 fig = plt.figure(figsize=(5, 5))
 im = plt.imshow(Q, interpolation="none", cmap=plt.get_cmap('binary'))
@@ -184,40 +163,15 @@ divider = make_axes_locatable(plt.gca())
 cax = divider.append_axes("right", "5%", pad="3%")
 plt.colorbar(im, cax=cax);
 
-# <headingcell level=2>
 
-# Real Measurements
+# ## Real Measurements
 
-# <codecell>
+# In[11]:
 
 #path = './../RaspberryPi-CarPC/TinkerDataLogger/DataLogs/2014/'
 datafile = '2014-03-26-000-Data.csv'
 
-date, \
-time, \
-millis, \
-ax, \
-ay, \
-az, \
-rollrate, \
-pitchrate, \
-yawrate, \
-roll, \
-pitch, \
-yaw, \
-speed, \
-course, \
-latitude, \
-longitude, \
-altitude, \
-pdop, \
-hdop, \
-vdop, \
-epe, \
-fix, \
-satellites_view, \
-satellites_used, \
-temp = np.loadtxt(datafile, delimiter=',', unpack=True, 
+date, time, millis, ax, ay, az, rollrate, pitchrate, yawrate, roll, pitch, yaw, speed, course, latitude, longitude, altitude, pdop, hdop, vdop, epe, fix, satellites_view, satellites_used, temp = np.loadtxt(datafile, delimiter=',', unpack=True, 
                   converters={1: mdates.strpdate2num('%H%M%S%f'),
                               0: mdates.strpdate2num('%y%m%d')},
                   skiprows=1)
@@ -230,17 +184,14 @@ print('Read \'%s\' successfully.' % datafile)
 # We need an offset.
 course =(-course+90.0)
 
-# <headingcell level=2>
 
-# Measurement Function H
-
-# <markdowncell>
+# ## Measurement Function H
 
 # Matrix $J_H$ is the Jacobian of the Measurement function $h$ with respect to the state. Function $h$ can be used to compute the predicted measurement from the predicted state.
 # 
 # If a GPS measurement is available, the following function maps the state to the measurement.
 
-# <codecell>
+# In[12]:
 
 hs = Matrix([[xs],
              [ys],
@@ -248,24 +199,20 @@ hs = Matrix([[xs],
              [dpsis]])
 hs
 
-# <codecell>
+
+# In[13]:
 
 JHs=hs.jacobian(state)
 JHs
 
-# <markdowncell>
 
 # If no GPS measurement is available, simply set the corresponding values in $J_h$ to zero.
 
-# <headingcell level=2>
-
-# Measurement Noise Covariance $R$
-
-# <markdowncell>
+# ## Measurement Noise Covariance $R$
 
 # "In practical use, the uncertainty estimates take on the significance of relative weights of state estimates and measurements. So it is not so much important that uncertainty is absolutely correct as it is that it be relatively consistent across all models" - Kelly, A. (1994). A 3D state space formulation of a navigation Kalman filter for autonomous vehicles, (May). Retrieved from http://oai.dtic.mil/oai/oai?verb=getRecord&metadataPrefix=html&identifier=ADA282853
 
-# <codecell>
+# In[14]:
 
 varGPS = 6.0 # Standard Deviation of GPS Measurement
 varspeed = 1.0 # Variance of the speed measurement
@@ -277,7 +224,8 @@ R = np.matrix([[varGPS**2, 0.0, 0.0, 0.0],
 
 print(R, R.shape)
 
-# <codecell>
+
+# In[15]:
 
 fig = plt.figure(figsize=(4.5, 4.5))
 im = plt.imshow(R, interpolation="none", cmap=plt.get_cmap('binary'))
@@ -302,20 +250,18 @@ divider = make_axes_locatable(plt.gca())
 cax = divider.append_axes("right", "5%", pad="3%")
 plt.colorbar(im, cax=cax);
 
-# <headingcell level=2>
 
-# Identity Matrix
+# ## Identity Matrix
 
-# <codecell>
+# In[16]:
 
 I = np.eye(numstates)
 print(I, I.shape)
 
-# <headingcell level=2>
 
-# Approx. Lat/Lon to Meters to check Location
+# ## Approx. Lat/Lon to Meters to check Location
 
-# <codecell>
+# In[17]:
 
 RadiusEarth = 6378388.0 # m
 arc= 2.0*np.pi*(RadiusEarth+altitude)/360.0 # m/°
@@ -330,11 +276,10 @@ ds = np.sqrt(dx**2+dy**2)
 
 GPS=np.hstack((True, (np.diff(ds)>0.0).astype('bool'))) # GPS Trigger for Kalman Filter
 
-# <headingcell level=2>
 
-# Initial State
+# ## Initial State
 
-# <codecell>
+# In[18]:
 
 x = np.matrix([[mx[0], my[0], course[0]/180.0*np.pi, speed[0]/3.6+0.001, yawrate[0]/180.0*np.pi]]).T
 print(x, x.shape)
@@ -347,18 +292,18 @@ plt.scatter(float(x[0]), float(x[1]), s=100)
 plt.title('Initial Location')
 plt.axis('equal')
 
-# <headingcell level=3>
 
-# Put everything together as a measurement vector
+# ### Put everything together as a measurement vector
 
-# <codecell>
+# In[19]:
 
 measurements = np.vstack((mx, my, speed/3.6, yawrate/180.0*np.pi))
 # Lenth of the measurement
 m = measurements.shape[1]
 print(measurements.shape)
 
-# <codecell>
+
+# In[20]:
 
 # Preallocation for Plotting
 x0 = []
@@ -382,19 +327,14 @@ Kdy= []
 Kddx=[]
 dstate=[]
 
-# <headingcell level=1>
 
-# Extended Kalman Filter
-
-# <markdowncell>
+# # Extended Kalman Filter
 
 # ![Extended Kalman Filter Step](Extended-Kalman-Filter-Step.png)
 
-# <markdowncell>
-
 # $$x_k= \begin{bmatrix} x \\ y \\ \psi \\ v \\ \dot\psi \end{bmatrix} = \begin{bmatrix} \text{Position X} \\ \text{Position Y} \\ \text{Heading} \\ \text{Velocity} \\ \text{Yaw Rate} \end{bmatrix} =  \underbrace{\begin{matrix}x[0] \\ x[1] \\ x[2] \\ x[3] \\ x[4]  \end{matrix}}_{\textrm{Python Nomenclature}}$$
 
-# <codecell>
+# In[21]:
 
 for filterstep in range(m):
 
@@ -485,15 +425,12 @@ for filterstep in range(m):
     Kdy.append(float(K[3,0]))
     Kddx.append(float(K[4,0]))
 
-# <headingcell level=2>
 
-# Plots
+# ## Plots
 
-# <headingcell level=3>
+# ### Uncertainties
 
-# Uncertainties
-
-# <codecell>
+# In[22]:
 
 fig = plt.figure(figsize=(16,9))
 plt.semilogy(range(m),Px, label='$x$')
@@ -507,7 +444,8 @@ plt.ylabel('')
 plt.title('Uncertainty (Elements from Matrix $P$)')
 plt.legend(loc='best',prop={'size':22})
 
-# <codecell>
+
+# In[23]:
 
 fig = plt.figure(figsize=(6, 6))
 im = plt.imshow(P, interpolation="none", cmap=plt.get_cmap('binary'))
@@ -535,11 +473,10 @@ plt.colorbar(im, cax=cax)
 
 plt.tight_layout()
 
-# <headingcell level=3>
 
-# Kalman Gains
+# ### Kalman Gains
 
-# <codecell>
+# In[24]:
 
 fig = plt.figure(figsize=(16,9))
 plt.step(range(len(measurements[0])),Kx, label='$x$')
@@ -555,11 +492,10 @@ plt.title('Kalman Gain (the lower, the more the measurement fullfill the predict
 plt.legend(prop={'size':18})
 plt.ylim([-0.1,0.1]);
 
-# <headingcell level=2>
 
-# State Vector
+# ## State Vector
 
-# <codecell>
+# In[25]:
 
 fig = plt.figure(figsize=(16,16))
 
@@ -594,15 +530,15 @@ plt.xlabel('Filter Step')
 
 plt.savefig('Extended-Kalman-Filter-CTRV-State-Estimates.png', dpi=72, transparent=True, bbox_inches='tight')
 
-# <headingcell level=2>
 
-# Position x/y
+# ## Position x/y
 
-# <codecell>
+# In[26]:
 
 #%pylab --no-import-all
 
-# <codecell>
+
+# In[27]:
 
 fig = plt.figure(figsize=(16,9))
 
@@ -629,11 +565,10 @@ plt.axis('equal')
 
 #plt.savefig('Extended-Kalman-Filter-CTRV-Position.png', dpi=72, transparent=True, bbox_inches='tight')
 
-# <headingcell level=3>
 
-# Detailed View
+# ### Detailed View
 
-# <codecell>
+# In[28]:
 
 fig = plt.figure(figsize=(9,9))
 
@@ -654,37 +589,27 @@ plt.ylim(140, 200)
 plt.title('Position')
 plt.legend(loc='best')
 
-# <headingcell level=1>
 
-# Conclusion
-
-# <markdowncell>
+# # Conclusion
 
 # As you can see, complicated analytic calculation of the Jacobian Matrices, but it works pretty well.
 
-# <headingcell level=2>
+# ## Write Google Earth KML
 
-# Write Google Earth KML
+# ### Convert back from Meters to Lat/Lon (WGS84)
 
-# <headingcell level=3>
-
-# Convert back from Meters to Lat/Lon (WGS84)
-
-# <codecell>
+# In[29]:
 
 latekf = latitude[0] + np.divide(x1,arc)
 lonekf = longitude[0]+ np.divide(x0,np.multiply(arc,np.cos(latitude*np.pi/180.0)))
 
-# <headingcell level=3>
 
-# Create Data for KML Path
-
-# <markdowncell>
+# ### Create Data for KML Path
 
 # Coordinates and timestamps to be used to locate the car model in time and space
 # The value can be expressed as yyyy-mm-ddThh:mm:sszzzzzz, where T is the separator between the date and the time, and the time zone is either Z (for UTC) or zzzzzz, which represents ±hh:mm in relation to UTC.
 
-# <codecell>
+# In[30]:
 
 import datetime
 car={}
@@ -697,11 +622,13 @@ for i in range(len(millis)):
     car["coord"].append((lonekf[i], latekf[i], 0))
     car["gps"].append((longitude[i], latitude[i], 0))
 
-# <codecell>
+
+# In[31]:
 
 from simplekml import Kml, Model, AltitudeMode, Orientation, Scale, Style, Color
 
-# <codecell>
+
+# In[ ]:
 
 # The model path and scale variables
 car_dae = r'http://simplekml.googlecode.com/hg/samples/resources/car-model.dae'
@@ -747,7 +674,8 @@ for m in range(len(latitude)):
 #kml.save("Extended-Kalman-Filter-CTRV.kml")
 kml.savekmz("Extended-Kalman-Filter-CTRV.kmz")
 
-# <codecell>
+
+# In[ ]:
 
 print('Exported KMZ File for Google Earth')
 
