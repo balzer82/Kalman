@@ -41,6 +41,13 @@ Here the Measurement Covariance Matrix R is calculated dynamically via the maxim
 
 [View IPython Notebook](https://github.com/balzer82/Kalman/blob/master/Adaptive-Kalman-Filter-CV.ipynb?create=1)
 
+### Kalman Filter for Motorbike Lean Angle Estimation
+
+Also know as the Gimbal Stabilization problem: You can measure the rotationrate, but need some validation for the correct lean angle from time to time, because simply an integration of the rotationrate adds up a lot of noise. There comes the vertical acceleration, which is a pretty good estimator for the angle in static situations. This Kalman Filter implementation fuses both together with some adaptive components.
+
+[View IPython Notebook](https://github.com/balzer82/Kalman/blob/master/Kalman-Filter-Bike-Lean-Angle.ipynb?create=1)
+
+
 ## Extended Kalman Filter
 
 ![EKF Filter Step](https://raw.githubusercontent.com/balzer82/Kalman/master/Extended-Kalman-Filter-Step.png)
@@ -52,6 +59,12 @@ Situation covered: You have an velocity sensor which measures the vehicle speed 
 ![State Vector](https://raw.githubusercontent.com/balzer82/Kalman/master/CTRV-Model.png)
 
 [View IPython Notebook](https://github.com/balzer82/Kalman/blob/master/Extended-Kalman-Filter-CTRV.ipynb?create=1) ~ [See Vimeo](https://vimeo.com/88057157)
+
+### Extended Kalman Filter with Constant Turn Rate and Acceleration (CTRA) Model
+
+Situation covered: You have an acceleration and velocity sensor which measures the vehicle longitudinal acceleration and speed (v) in heading direction (ψ) and a yaw rate sensor (ψ˙) which all have to fused with the position (x & y) from a GPS sensor.
+
+[View IPython Notebook](https://github.com/balzer82/Kalman/blob/master/Extended-Kalman-Filter-CTRA.ipynb?create=1)
 
 ## License
 
