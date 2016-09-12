@@ -544,10 +544,10 @@ fig = plt.figure(figsize=(16,9))
 
 # EKF State
 plt.quiver(x0,x1,np.cos(x2), np.sin(x2), color='#94C600', units='xy', width=0.05, scale=0.5)
-plt.plot(x0,x1, label='EKF Position')
+plt.plot(x0,x1, label='EKF Position', c='k', lw=5)
 
 # Measurements
-plt.scatter(mx[::5],my[::5], s=50, label='GPS Measurements')
+plt.scatter(mx[::5],my[::5], s=50, label='GPS Measurements', marker='+')
 #cbar=plt.colorbar(ticks=np.arange(20))
 #cbar.ax.set_ylabel(u'EPE', rotation=270)
 #cbar.ax.set_xlabel(u'm')
@@ -570,14 +570,15 @@ plt.axis('equal')
 
 # In[28]:
 
-fig = plt.figure(figsize=(9,9))
+fig = plt.figure(figsize=(12,9))
 
+plt.subplot(221)
 # EKF State
 #plt.quiver(x0,x1,np.cos(x2), np.sin(x2), color='#94C600', units='xy', width=0.05, scale=0.5)
-plt.plot(x0,x1, label='EKF Position')
+plt.plot(x0,x1, label='EKF Position', c='g', lw=5)
 
 # Measurements
-plt.scatter(mx[::5],my[::5], s=50, label='GPS Measurements')
+plt.scatter(mx[::5],my[::5], s=50, label='GPS Measurements', alpha=0.5, marker='+')
 #cbar=plt.colorbar(ticks=np.arange(20))
 #cbar.ax.set_ylabel(u'EPE', rotation=270)
 #cbar.ax.set_xlabel(u'm')
@@ -586,6 +587,26 @@ plt.xlabel('X [m]')
 plt.xlim(70, 130)
 plt.ylabel('Y [m]')
 plt.ylim(140, 200)
+plt.title('Position')
+plt.legend(loc='best')
+
+
+plt.subplot(222)
+
+# EKF State
+#plt.quiver(x0,x1,np.cos(x2), np.sin(x2), color='#94C600', units='xy', width=0.05, scale=0.5)
+plt.plot(x0,x1, label='EKF Position', c='g', lw=5)
+
+# Measurements
+plt.scatter(mx[::5],my[::5], s=50, label='GPS Measurements', alpha=0.5, marker='+')
+#cbar=plt.colorbar(ticks=np.arange(20))
+#cbar.ax.set_ylabel(u'EPE', rotation=270)
+#cbar.ax.set_xlabel(u'm')
+
+plt.xlabel('X [m]')
+plt.xlim(160, 260)
+plt.ylabel('Y [m]')
+plt.ylim(110, 160)
 plt.title('Position')
 plt.legend(loc='best')
 
@@ -628,10 +649,10 @@ for i in range(len(millis)):
 from simplekml import Kml, Model, AltitudeMode, Orientation, Scale, Style, Color
 
 
-# In[ ]:
+# In[32]:
 
 # The model path and scale variables
-car_dae = r'http://simplekml.googlecode.com/hg/samples/resources/car-model.dae'
+car_dae = r'https://raw.githubusercontent.com/balzer82/Kalman/master/car-model.dae'
 car_scale = 1.0
 
 # Create the KML document
@@ -675,7 +696,7 @@ for m in range(len(latitude)):
 kml.savekmz("Extended-Kalman-Filter-CTRV.kmz")
 
 
-# In[ ]:
+# In[33]:
 
 print('Exported KMZ File for Google Earth')
 
