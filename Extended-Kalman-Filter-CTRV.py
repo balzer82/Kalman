@@ -1,7 +1,7 @@
 
 # coding: utf-8
 
-# In[1]:
+# In[35]:
 
 import numpy as np
 get_ipython().magic(u'matplotlib inline')
@@ -14,7 +14,7 @@ init_printing(use_latex=True)
 
 
 # # Extended Kalman Filter Implementation for Constant Turn Rate and Velocity (CTRV) Vehicle Model in Python
-
+# 
 # ![Extended Kalman Filter Step](Extended-Kalman-Filter-Step.png)
 
 # [Wikipedia](http://en.wikipedia.org/wiki/Extended_Kalman_filter) writes: In the extended Kalman filter, the state transition and observation models need not be linear functions of the state but may instead be differentiable functions.
@@ -29,28 +29,32 @@ init_printing(use_latex=True)
 # 
 # At each time step, the Jacobian is evaluated with current predicted states. These matrices can be used in the Kalman filter equations. This process essentially linearizes the non-linear function around the current estimate.
 
-# Situation covered: You have a velocity sensor, which measures the vehicle speed ($v$) in heading direction ($\psi$) and a yaw rate sensor ($\dot \psi$) which both have to fused with the position ($x$ & $y$) from a GPS sensor.
-
 # ## State Vector - Constant Turn Rate and Velocity Vehicle Model (CTRV)
+# 
+# Situation covered: You have a velocity sensor, which measures the vehicle speed ($v$) in heading direction ($\psi$) and a yaw rate sensor ($\dot \psi$) which both have to fused with the position ($x$ & $y$) from a GPS sensor.
 
 # Constant Turn Rate, Constant Velocity Model for a vehicle ![CTRV Model](CTRV-Model.png)
 # 
 # $$x_k= \left[ \matrix{ x \\ y \\ \psi \\ v \\ \dot\psi} \right] = \left[ \matrix{ \text{Position X} \\ \text{Position Y} \\ \text{Heading} \\ \text{Velocity} \\ \text{Yaw Rate}} \right]$$
 
-# In[2]:
+# In[36]:
 
 numstates=5 # States
 
 
-# In[3]:
+# We have different frequency of sensor readings.
+
+# In[37]:
 
 dt = 1.0/50.0 # Sample Rate of the Measurements is 50Hz
 dtGPS=1.0/10.0 # Sample Rate of GPS is 10Hz
 
 
+# ### Developing the math behind dynamic model
+# 
 # All symbolic calculations are made with [Sympy](http://nbviewer.ipython.org/github/jrjohansson/scientific-python-lectures/blob/master/Lecture-5-Sympy.ipynb). Thanks!
 
-# In[4]:
+# In[38]:
 
 vs, psis, dpsis, dts, xs, ys, lats, lons = symbols('v \psi \dot\psi T x y lat lon')
 
@@ -62,23 +66,23 @@ gs = Matrix([[xs+(vs/dpsis)*(sin(psis+dpsis*dts)-sin(psis))],
 state = Matrix([xs,ys,psis,vs,dpsis])
 
 
-# ## Dynamic Matrix
-
+# ## Dynamic Function $g$
+# 
 # This formulas calculate how the state is evolving from one to the next time step
 
-# In[5]:
+# In[39]:
 
 gs
 
 
-# ### Calculate the Jacobian of the Dynamic Matrix with respect to the state vector
+# ### Calculate the Jacobian of the Dynamic function $g$ with respect to the state vector $x$
 
-# In[6]:
+# In[40]:
 
 state
 
 
-# In[7]:
+# In[41]:
 
 gs.jacobian(state)
 
@@ -88,13 +92,16 @@ gs.jacobian(state)
 # To Sympy Team: A `.to_python` and `.to_c` and `.to_matlab` whould be nice to generate code, like it already works with `print latex()`.
 
 # ## Initial Uncertainty $P_0$
-
+# 
 # Initialized with $0$ means you are pretty sure where the vehicle starts
 
-# In[8]:
+# In[42]:
 
 P = np.diag([1000.0, 1000.0, 1000.0, 1000.0, 1000.0])
 print(P, P.shape)
+
+
+# In[43]:
 
 fig = plt.figure(figsize=(5, 5))
 im = plt.imshow(P, interpolation="none", cmap=plt.get_cmap('binary'))
@@ -123,11 +130,11 @@ plt.colorbar(im, cax=cax)
 plt.tight_layout()
 
 
-# ## Process Noise Covariance Matrix Q
-
+# ## Process Noise Covariance Matrix $Q$
+# 
 # "*The state uncertainty model models the disturbances which excite the linear system. Conceptually, it estimates how bad things can get when the system is run open loop for a given period of time.*" - Kelly, A. (1994). A 3D state space formulation of a navigation Kalman filter for autonomous vehicles, (May). Retrieved from http://oai.dtic.mil/oai/oai?verb=getRecord&metadataPrefix=html&identifier=ADA282853
 
-# In[9]:
+# In[44]:
 
 sGPS     = 0.5*8.8*dt**2  # assume 8.8m/s2 as maximum acceleration, forcing the vehicle
 sCourse  = 0.1*dt # assume 0.1rad/s as maximum turn rate for the vehicle
@@ -138,7 +145,7 @@ Q = np.diag([sGPS**2, sGPS**2, sCourse**2, sVelocity**2, sYaw**2])
 print(Q, Q.shape)
 
 
-# In[10]:
+# In[45]:
 
 fig = plt.figure(figsize=(5, 5))
 im = plt.imshow(Q, interpolation="none", cmap=plt.get_cmap('binary'))
@@ -166,7 +173,7 @@ plt.colorbar(im, cax=cax);
 
 # ## Real Measurements
 
-# In[11]:
+# In[46]:
 
 #path = './../RaspberryPi-CarPC/TinkerDataLogger/DataLogs/2014/'
 datafile = '2014-03-26-000-Data.csv'
@@ -185,13 +192,13 @@ print('Read \'%s\' successfully.' % datafile)
 course =(-course+90.0)
 
 
-# ## Measurement Function H
-
+# ## Measurement Function $h$
+# 
 # Matrix $J_H$ is the Jacobian of the Measurement function $h$ with respect to the state. Function $h$ can be used to compute the predicted measurement from the predicted state.
 # 
 # If a GPS measurement is available, the following function maps the state to the measurement.
 
-# In[12]:
+# In[47]:
 
 hs = Matrix([[xs],
              [ys],
@@ -200,7 +207,7 @@ hs = Matrix([[xs],
 hs
 
 
-# In[13]:
+# In[48]:
 
 JHs=hs.jacobian(state)
 JHs
@@ -209,10 +216,10 @@ JHs
 # If no GPS measurement is available, simply set the corresponding values in $J_h$ to zero.
 
 # ## Measurement Noise Covariance $R$
-
+# 
 # "In practical use, the uncertainty estimates take on the significance of relative weights of state estimates and measurements. So it is not so much important that uncertainty is absolutely correct as it is that it be relatively consistent across all models" - Kelly, A. (1994). A 3D state space formulation of a navigation Kalman filter for autonomous vehicles, (May). Retrieved from http://oai.dtic.mil/oai/oai?verb=getRecord&metadataPrefix=html&identifier=ADA282853
 
-# In[14]:
+# In[49]:
 
 varGPS = 6.0 # Standard Deviation of GPS Measurement
 varspeed = 1.0 # Variance of the speed measurement
@@ -225,7 +232,7 @@ R = np.matrix([[varGPS**2, 0.0, 0.0, 0.0],
 print(R, R.shape)
 
 
-# In[15]:
+# In[50]:
 
 fig = plt.figure(figsize=(4.5, 4.5))
 im = plt.imshow(R, interpolation="none", cmap=plt.get_cmap('binary'))
@@ -253,7 +260,7 @@ plt.colorbar(im, cax=cax);
 
 # ## Identity Matrix
 
-# In[16]:
+# In[51]:
 
 I = np.eye(numstates)
 print(I, I.shape)
@@ -261,7 +268,7 @@ print(I, I.shape)
 
 # ## Approx. Lat/Lon to Meters to check Location
 
-# In[17]:
+# In[52]:
 
 RadiusEarth = 6378388.0 # m
 arc= 2.0*np.pi*(RadiusEarth+altitude)/360.0 # m/°
@@ -279,7 +286,7 @@ GPS=np.hstack((True, (np.diff(ds)>0.0).astype('bool'))) # GPS Trigger for Kalman
 
 # ## Initial State
 
-# In[18]:
+# In[53]:
 
 x = np.matrix([[mx[0], my[0], course[0]/180.0*np.pi, speed[0]/3.6+0.001, yawrate[0]/180.0*np.pi]]).T
 print(x, x.shape)
@@ -295,7 +302,7 @@ plt.axis('equal')
 
 # ### Put everything together as a measurement vector
 
-# In[19]:
+# In[54]:
 
 measurements = np.vstack((mx, my, speed/3.6, yawrate/180.0*np.pi))
 # Lenth of the measurement
@@ -303,7 +310,7 @@ m = measurements.shape[1]
 print(measurements.shape)
 
 
-# In[20]:
+# In[55]:
 
 # Preallocation for Plotting
 x0 = []
@@ -328,13 +335,33 @@ Kddx=[]
 dstate=[]
 
 
-# # Extended Kalman Filter
+def savestates(x, Z, P, K):
+    x0.append(float(x[0]))
+    x1.append(float(x[1]))
+    x2.append(float(x[2]))
+    x3.append(float(x[3]))
+    x4.append(float(x[4]))
+    Zx.append(float(Z[0]))
+    Zy.append(float(Z[1]))    
+    Px.append(float(P[0,0]))
+    Py.append(float(P[1,1]))
+    Pdx.append(float(P[2,2]))
+    Pdy.append(float(P[3,3]))
+    Pddx.append(float(P[4,4]))
+    Kx.append(float(K[0,0]))
+    Ky.append(float(K[1,0]))
+    Kdx.append(float(K[2,0]))
+    Kdy.append(float(K[3,0]))
+    Kddx.append(float(K[4,0]))
 
+
+# # Extended Kalman Filter
+# 
 # ![Extended Kalman Filter Step](Extended-Kalman-Filter-Step.png)
 
 # $$x_k= \begin{bmatrix} x \\ y \\ \psi \\ v \\ \dot\psi \end{bmatrix} = \begin{bmatrix} \text{Position X} \\ \text{Position Y} \\ \text{Heading} \\ \text{Velocity} \\ \text{Yaw Rate} \end{bmatrix} =  \underbrace{\begin{matrix}x[0] \\ x[1] \\ x[2] \\ x[3] \\ x[4]  \end{matrix}}_{\textrm{Python Nomenclature}}$$
 
-# In[21]:
+# In[56]:
 
 for filterstep in range(m):
 
@@ -406,46 +433,37 @@ for filterstep in range(m):
     P = (I - (K*JH))*P
 
 
+    
     # Save states for Plotting
-    x0.append(float(x[0]))
-    x1.append(float(x[1]))
-    x2.append(float(x[2]))
-    x3.append(float(x[3]))
-    x4.append(float(x[4]))
-    Zx.append(float(Z[0]))
-    Zy.append(float(Z[1]))    
-    Px.append(float(P[0,0]))
-    Py.append(float(P[1,1]))
-    Pdx.append(float(P[2,2]))
-    Pdy.append(float(P[3,3]))
-    Pddx.append(float(P[4,4]))
-    Kx.append(float(K[0,0]))
-    Ky.append(float(K[1,0]))
-    Kdx.append(float(K[2,0]))
-    Kdy.append(float(K[3,0]))
-    Kddx.append(float(K[4,0]))
+    savestates(x, Z, P, K)
 
 
-# ## Plots
+# ## Lets take a look at the filter performance
 
-# ### Uncertainties
+# In[57]:
 
-# In[22]:
+def plotP():
+    fig = plt.figure(figsize=(16,9))
+    plt.semilogy(range(m),Px, label='$x$')
+    plt.step(range(m),Py, label='$y$')
+    plt.step(range(m),Pdx, label='$\psi$')
+    plt.step(range(m),Pdy, label='$v$')
+    plt.step(range(m),Pddx, label='$\dot \psi$')
 
-fig = plt.figure(figsize=(16,9))
-plt.semilogy(range(m),Px, label='$x$')
-plt.step(range(m),Py, label='$y$')
-plt.step(range(m),Pdx, label='$\psi$')
-plt.step(range(m),Pdy, label='$v$')
-plt.step(range(m),Pddx, label='$\dot \psi$')
-
-plt.xlabel('Filter Step')
-plt.ylabel('')
-plt.title('Uncertainty (Elements from Matrix $P$)')
-plt.legend(loc='best',prop={'size':22})
+    plt.xlabel('Filter Step')
+    plt.ylabel('')
+    plt.title('Uncertainty (Elements from Matrix $P$)')
+    plt.legend(loc='best',prop={'size':22})
 
 
-# In[23]:
+# ### Uncertainties in $P$
+
+# In[58]:
+
+plotP()
+
+
+# In[59]:
 
 fig = plt.figure(figsize=(6, 6))
 im = plt.imshow(P, interpolation="none", cmap=plt.get_cmap('binary'))
@@ -476,7 +494,7 @@ plt.tight_layout()
 
 # ### Kalman Gains
 
-# In[24]:
+# In[60]:
 
 fig = plt.figure(figsize=(16,9))
 plt.step(range(len(measurements[0])),Kx, label='$x$')
@@ -495,120 +513,139 @@ plt.ylim([-0.1,0.1]);
 
 # ## State Vector
 
-# In[25]:
+# In[61]:
 
-fig = plt.figure(figsize=(16,16))
+def plotx():
+    fig = plt.figure(figsize=(16,16))
 
-plt.subplot(411)
-plt.step(range(len(measurements[0])),x0-mx[0], label='$x$')
-plt.step(range(len(measurements[0])),x1-my[0], label='$y$')
+    plt.subplot(411)
+    plt.step(range(len(measurements[0])),x0-mx[0], label='$x$')
+    plt.step(range(len(measurements[0])),x1-my[0], label='$y$')
 
-plt.title('Extended Kalman Filter State Estimates (State Vector $x$)')
-plt.legend(loc='best',prop={'size':22})
-plt.ylabel('Position (relative to start) [m]')
+    plt.title('Extended Kalman Filter State Estimates (State Vector $x$)')
+    plt.legend(loc='best',prop={'size':22})
+    plt.ylabel('Position (relative to start) [m]')
 
-plt.subplot(412)
-plt.step(range(len(measurements[0])),x2, label='$\psi$')
-plt.step(range(len(measurements[0])),(course/180.0*np.pi+np.pi)%(2.0*np.pi) - np.pi, label='$\psi$ (from GPS as reference)')
-plt.ylabel('Course')
-plt.legend(loc='best',prop={'size':16})
-           
-plt.subplot(413)
-plt.step(range(len(measurements[0])),x3, label='$v$')
-plt.step(range(len(measurements[0])),speed/3.6, label='$v$ (from GPS as reference)')
-plt.ylabel('Velocity')
-plt.ylim([0, 30])
-plt.legend(loc='best',prop={'size':16})
+    plt.subplot(412)
+    plt.step(range(len(measurements[0])),x2, label='$\psi$')
+    plt.step(range(len(measurements[0])),(course/180.0*np.pi+np.pi)%(2.0*np.pi) - np.pi, label='$\psi$ (from GPS as reference)')
+    plt.ylabel('Course')
+    plt.legend(loc='best',prop={'size':16})
 
-plt.subplot(414)
-plt.step(range(len(measurements[0])),x4, label='$\dot \psi$')
-plt.step(range(len(measurements[0])),yawrate/180.0*np.pi, label='$\dot \psi$ (from IMU as reference)')
-plt.ylabel('Yaw Rate')
-plt.ylim([-0.6, 0.6])
-plt.legend(loc='best',prop={'size':16})
-plt.xlabel('Filter Step')
+    plt.subplot(413)
+    plt.step(range(len(measurements[0])),x3, label='$v$')
+    plt.step(range(len(measurements[0])),speed/3.6, label='$v$ (from GPS as reference)')
+    plt.ylabel('Velocity')
+    plt.ylim([0, 30])
+    plt.legend(loc='best',prop={'size':16})
 
-plt.savefig('Extended-Kalman-Filter-CTRV-State-Estimates.png', dpi=72, transparent=True, bbox_inches='tight')
+    plt.subplot(414)
+    plt.step(range(len(measurements[0])),x4, label='$\dot \psi$')
+    plt.step(range(len(measurements[0])),yawrate/180.0*np.pi, label='$\dot \psi$ (from IMU as reference)')
+    plt.ylabel('Yaw Rate')
+    plt.ylim([-0.6, 0.6])
+    plt.legend(loc='best',prop={'size':16})
+    plt.xlabel('Filter Step')
+
+    plt.savefig('Extended-Kalman-Filter-CTRV-State-Estimates.png', dpi=72, transparent=True, bbox_inches='tight')
+
+
+# In[62]:
+
+plotx()
 
 
 # ## Position x/y
 
-# In[26]:
+# In[63]:
 
 #%pylab --no-import-all
 
 
-# In[27]:
+# In[64]:
 
-fig = plt.figure(figsize=(16,9))
+def plotxy():
 
-# EKF State
-plt.quiver(x0,x1,np.cos(x2), np.sin(x2), color='#94C600', units='xy', width=0.05, scale=0.5)
-plt.plot(x0,x1, label='EKF Position', c='k', lw=5)
+    fig = plt.figure(figsize=(16,9))
 
-# Measurements
-plt.scatter(mx[::5],my[::5], s=50, label='GPS Measurements', marker='+')
-#cbar=plt.colorbar(ticks=np.arange(20))
-#cbar.ax.set_ylabel(u'EPE', rotation=270)
-#cbar.ax.set_xlabel(u'm')
+    # EKF State
+    plt.quiver(x0,x1,np.cos(x2), np.sin(x2), color='#94C600', units='xy', width=0.05, scale=0.5)
+    plt.plot(x0,x1, label='EKF Position', c='k', lw=5)
 
-# Start/Goal
-plt.scatter(x0[0],x1[0], s=60, label='Start', c='g')
-plt.scatter(x0[-1],x1[-1], s=60, label='Goal', c='r')
+    # Measurements
+    plt.scatter(mx[::5],my[::5], s=50, label='GPS Measurements', marker='+')
+    #cbar=plt.colorbar(ticks=np.arange(20))
+    #cbar.ax.set_ylabel(u'EPE', rotation=270)
+    #cbar.ax.set_xlabel(u'm')
 
-plt.xlabel('X [m]')
-plt.ylabel('Y [m]')
-plt.title('Position')
-plt.legend(loc='best')
-plt.axis('equal')
-#plt.tight_layout()
+    # Start/Goal
+    plt.scatter(x0[0],x1[0], s=60, label='Start', c='g')
+    plt.scatter(x0[-1],x1[-1], s=60, label='Goal', c='r')
 
-#plt.savefig('Extended-Kalman-Filter-CTRV-Position.png', dpi=72, transparent=True, bbox_inches='tight')
+    plt.xlabel('X [m]')
+    plt.ylabel('Y [m]')
+    plt.title('Position')
+    plt.legend(loc='best')
+    plt.axis('equal')
+    #plt.tight_layout()
+
+    #plt.savefig('Extended-Kalman-Filter-CTRV-Position.png', dpi=72, transparent=True, bbox_inches='tight')
+
+
+# In[65]:
+
+plotxy()
 
 
 # ### Detailed View
 
-# In[28]:
+# In[66]:
 
-fig = plt.figure(figsize=(12,9))
+def plotxydetails():
+    fig = plt.figure(figsize=(12,9))
 
-plt.subplot(221)
-# EKF State
-#plt.quiver(x0,x1,np.cos(x2), np.sin(x2), color='#94C600', units='xy', width=0.05, scale=0.5)
-plt.plot(x0,x1, label='EKF Position', c='g', lw=5)
+    plt.subplot(221)
+    # EKF State
+    #plt.quiver(x0,x1,np.cos(x2), np.sin(x2), color='#94C600', units='xy', width=0.05, scale=0.5)
+    plt.plot(x0,x1, label='EKF Position', c='g', lw=5)
 
-# Measurements
-plt.scatter(mx[::5],my[::5], s=50, label='GPS Measurements', alpha=0.5, marker='+')
-#cbar=plt.colorbar(ticks=np.arange(20))
-#cbar.ax.set_ylabel(u'EPE', rotation=270)
-#cbar.ax.set_xlabel(u'm')
+    # Measurements
+    plt.scatter(mx[::5],my[::5], s=50, label='GPS Measurements', alpha=0.5, marker='+')
+    #cbar=plt.colorbar(ticks=np.arange(20))
+    #cbar.ax.set_ylabel(u'EPE', rotation=270)
+    #cbar.ax.set_xlabel(u'm')
 
-plt.xlabel('X [m]')
-plt.xlim(70, 130)
-plt.ylabel('Y [m]')
-plt.ylim(140, 200)
-plt.title('Position')
-plt.legend(loc='best')
+    plt.xlabel('X [m]')
+    plt.xlim(70, 130)
+    plt.ylabel('Y [m]')
+    plt.ylim(140, 200)
+    plt.title('Position')
+    plt.legend(loc='best')
 
 
-plt.subplot(222)
+    plt.subplot(222)
 
-# EKF State
-#plt.quiver(x0,x1,np.cos(x2), np.sin(x2), color='#94C600', units='xy', width=0.05, scale=0.5)
-plt.plot(x0,x1, label='EKF Position', c='g', lw=5)
+    # EKF State
+    #plt.quiver(x0,x1,np.cos(x2), np.sin(x2), color='#94C600', units='xy', width=0.05, scale=0.5)
+    plt.plot(x0,x1, label='EKF Position', c='g', lw=5)
 
-# Measurements
-plt.scatter(mx[::5],my[::5], s=50, label='GPS Measurements', alpha=0.5, marker='+')
-#cbar=plt.colorbar(ticks=np.arange(20))
-#cbar.ax.set_ylabel(u'EPE', rotation=270)
-#cbar.ax.set_xlabel(u'm')
+    # Measurements
+    plt.scatter(mx[::5],my[::5], s=50, label='GPS Measurements', alpha=0.5, marker='+')
+    #cbar=plt.colorbar(ticks=np.arange(20))
+    #cbar.ax.set_ylabel(u'EPE', rotation=270)
+    #cbar.ax.set_xlabel(u'm')
 
-plt.xlabel('X [m]')
-plt.xlim(160, 260)
-plt.ylabel('Y [m]')
-plt.ylim(110, 160)
-plt.title('Position')
-plt.legend(loc='best')
+    plt.xlabel('X [m]')
+    plt.xlim(160, 260)
+    plt.ylabel('Y [m]')
+    plt.ylim(110, 160)
+    plt.title('Position')
+    plt.legend(loc='best')
+
+
+# In[67]:
+
+plotxydetails()
 
 
 # # Conclusion
@@ -619,7 +656,7 @@ plt.legend(loc='best')
 
 # ### Convert back from Meters to Lat/Lon (WGS84)
 
-# In[29]:
+# In[68]:
 
 latekf = latitude[0] + np.divide(x1,arc)
 lonekf = longitude[0]+ np.divide(x0,np.multiply(arc,np.cos(latitude*np.pi/180.0)))
@@ -630,7 +667,7 @@ lonekf = longitude[0]+ np.divide(x0,np.multiply(arc,np.cos(latitude*np.pi/180.0)
 # Coordinates and timestamps to be used to locate the car model in time and space
 # The value can be expressed as yyyy-mm-ddThh:mm:sszzzzzz, where T is the separator between the date and the time, and the time zone is either Z (for UTC) or zzzzzz, which represents ±hh:mm in relation to UTC.
 
-# In[30]:
+# In[69]:
 
 import datetime
 car={}
@@ -644,12 +681,12 @@ for i in range(len(millis)):
     car["gps"].append((longitude[i], latitude[i], 0))
 
 
-# In[31]:
+# In[70]:
 
 from simplekml import Kml, Model, AltitudeMode, Orientation, Scale, Style, Color
 
 
-# In[32]:
+# In[71]:
 
 # The model path and scale variables
 car_dae = r'https://raw.githubusercontent.com/balzer82/Kalman/master/car-model.dae'
@@ -696,7 +733,18 @@ for m in range(len(latitude)):
 kml.savekmz("Extended-Kalman-Filter-CTRV.kmz")
 
 
-# In[33]:
+# In[72]:
 
 print('Exported KMZ File for Google Earth')
+
+
+# To use this notebook as a presentation type:
+# 
+# `jupyter-nbconvert --to slides Extended-Kalman-Filter-CTRV.ipynb --reveal-prefix=reveal.js --post serve` 
+# 
+# Questions? [@Balzer82](https://twitter.com/balzer82)
+
+# In[ ]:
+
+
 
