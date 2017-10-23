@@ -1,7 +1,7 @@
 
 # coding: utf-8
 
-# In[35]:
+# In[1]:
 
 import numpy as np
 get_ipython().magic(u'matplotlib inline')
@@ -37,14 +37,14 @@ init_printing(use_latex=True)
 # 
 # $$x_k= \left[ \matrix{ x \\ y \\ \psi \\ v \\ \dot\psi} \right] = \left[ \matrix{ \text{Position X} \\ \text{Position Y} \\ \text{Heading} \\ \text{Velocity} \\ \text{Yaw Rate}} \right]$$
 
-# In[36]:
+# In[2]:
 
 numstates=5 # States
 
 
 # We have different frequency of sensor readings.
 
-# In[37]:
+# In[3]:
 
 dt = 1.0/50.0 # Sample Rate of the Measurements is 50Hz
 dtGPS=1.0/10.0 # Sample Rate of GPS is 10Hz
@@ -54,7 +54,7 @@ dtGPS=1.0/10.0 # Sample Rate of GPS is 10Hz
 # 
 # All symbolic calculations are made with [Sympy](http://nbviewer.ipython.org/github/jrjohansson/scientific-python-lectures/blob/master/Lecture-5-Sympy.ipynb). Thanks!
 
-# In[38]:
+# In[4]:
 
 vs, psis, dpsis, dts, xs, ys, lats, lons = symbols('v \psi \dot\psi T x y lat lon')
 
@@ -70,19 +70,19 @@ state = Matrix([xs,ys,psis,vs,dpsis])
 # 
 # This formulas calculate how the state is evolving from one to the next time step
 
-# In[39]:
+# In[5]:
 
 gs
 
 
 # ### Calculate the Jacobian of the Dynamic function $g$ with respect to the state vector $x$
 
-# In[40]:
+# In[6]:
 
 state
 
 
-# In[41]:
+# In[7]:
 
 gs.jacobian(state)
 
@@ -95,13 +95,13 @@ gs.jacobian(state)
 # 
 # Initialized with $0$ means you are pretty sure where the vehicle starts
 
-# In[42]:
+# In[8]:
 
 P = np.diag([1000.0, 1000.0, 1000.0, 1000.0, 1000.0])
 print(P, P.shape)
 
 
-# In[43]:
+# In[9]:
 
 fig = plt.figure(figsize=(5, 5))
 im = plt.imshow(P, interpolation="none", cmap=plt.get_cmap('binary'))
@@ -134,7 +134,7 @@ plt.tight_layout()
 # 
 # "*The state uncertainty model models the disturbances which excite the linear system. Conceptually, it estimates how bad things can get when the system is run open loop for a given period of time.*" - Kelly, A. (1994). A 3D state space formulation of a navigation Kalman filter for autonomous vehicles, (May). Retrieved from http://oai.dtic.mil/oai/oai?verb=getRecord&metadataPrefix=html&identifier=ADA282853
 
-# In[44]:
+# In[10]:
 
 sGPS     = 0.5*8.8*dt**2  # assume 8.8m/s2 as maximum acceleration, forcing the vehicle
 sCourse  = 0.1*dt # assume 0.1rad/s as maximum turn rate for the vehicle
@@ -145,7 +145,7 @@ Q = np.diag([sGPS**2, sGPS**2, sCourse**2, sVelocity**2, sYaw**2])
 print(Q, Q.shape)
 
 
-# In[45]:
+# In[11]:
 
 fig = plt.figure(figsize=(5, 5))
 im = plt.imshow(Q, interpolation="none", cmap=plt.get_cmap('binary'))
@@ -173,7 +173,7 @@ plt.colorbar(im, cax=cax);
 
 # ## Real Measurements
 
-# In[46]:
+# In[12]:
 
 #path = './../RaspberryPi-CarPC/TinkerDataLogger/DataLogs/2014/'
 datafile = '2014-03-26-000-Data.csv'
@@ -198,7 +198,7 @@ course =(-course+90.0)
 # 
 # If a GPS measurement is available, the following function maps the state to the measurement.
 
-# In[47]:
+# In[13]:
 
 hs = Matrix([[xs],
              [ys],
@@ -207,7 +207,7 @@ hs = Matrix([[xs],
 hs
 
 
-# In[48]:
+# In[14]:
 
 JHs=hs.jacobian(state)
 JHs
@@ -219,7 +219,7 @@ JHs
 # 
 # "In practical use, the uncertainty estimates take on the significance of relative weights of state estimates and measurements. So it is not so much important that uncertainty is absolutely correct as it is that it be relatively consistent across all models" - Kelly, A. (1994). A 3D state space formulation of a navigation Kalman filter for autonomous vehicles, (May). Retrieved from http://oai.dtic.mil/oai/oai?verb=getRecord&metadataPrefix=html&identifier=ADA282853
 
-# In[49]:
+# In[15]:
 
 varGPS = 6.0 # Standard Deviation of GPS Measurement
 varspeed = 1.0 # Variance of the speed measurement
@@ -232,7 +232,7 @@ R = np.matrix([[varGPS**2, 0.0, 0.0, 0.0],
 print(R, R.shape)
 
 
-# In[50]:
+# In[16]:
 
 fig = plt.figure(figsize=(4.5, 4.5))
 im = plt.imshow(R, interpolation="none", cmap=plt.get_cmap('binary'))
@@ -260,7 +260,7 @@ plt.colorbar(im, cax=cax);
 
 # ## Identity Matrix
 
-# In[51]:
+# In[17]:
 
 I = np.eye(numstates)
 print(I, I.shape)
@@ -268,7 +268,7 @@ print(I, I.shape)
 
 # ## Approx. Lat/Lon to Meters to check Location
 
-# In[52]:
+# In[18]:
 
 RadiusEarth = 6378388.0 # m
 arc= 2.0*np.pi*(RadiusEarth+altitude)/360.0 # m/°
@@ -281,12 +281,12 @@ my = np.cumsum(dy)
 
 ds = np.sqrt(dx**2+dy**2)
 
-GPS=np.hstack((True, (np.diff(ds)>0.0).astype('bool'))) # GPS Trigger for Kalman Filter
+GPS=(ds!=0.0).astype('bool') # GPS Trigger for Kalman Filter
 
 
 # ## Initial State
 
-# In[53]:
+# In[19]:
 
 x = np.matrix([[mx[0], my[0], course[0]/180.0*np.pi, speed[0]/3.6+0.001, yawrate[0]/180.0*np.pi]]).T
 print(x, x.shape)
@@ -302,7 +302,7 @@ plt.axis('equal')
 
 # ### Put everything together as a measurement vector
 
-# In[54]:
+# In[20]:
 
 measurements = np.vstack((mx, my, speed/3.6, yawrate/180.0*np.pi))
 # Lenth of the measurement
@@ -310,7 +310,7 @@ m = measurements.shape[1]
 print(measurements.shape)
 
 
-# In[55]:
+# In[21]:
 
 # Preallocation for Plotting
 x0 = []
@@ -361,7 +361,7 @@ def savestates(x, Z, P, K):
 
 # $$x_k= \begin{bmatrix} x \\ y \\ \psi \\ v \\ \dot\psi \end{bmatrix} = \begin{bmatrix} \text{Position X} \\ \text{Position Y} \\ \text{Heading} \\ \text{Velocity} \\ \text{Yaw Rate} \end{bmatrix} =  \underbrace{\begin{matrix}x[0] \\ x[1] \\ x[2] \\ x[3] \\ x[4]  \end{matrix}}_{\textrm{Python Nomenclature}}$$
 
-# In[56]:
+# In[22]:
 
 for filterstep in range(m):
 
@@ -440,7 +440,7 @@ for filterstep in range(m):
 
 # ## Lets take a look at the filter performance
 
-# In[57]:
+# In[23]:
 
 def plotP():
     fig = plt.figure(figsize=(16,9))
@@ -458,12 +458,12 @@ def plotP():
 
 # ### Uncertainties in $P$
 
-# In[58]:
+# In[24]:
 
 plotP()
 
 
-# In[59]:
+# In[25]:
 
 fig = plt.figure(figsize=(6, 6))
 im = plt.imshow(P, interpolation="none", cmap=plt.get_cmap('binary'))
@@ -494,7 +494,7 @@ plt.tight_layout()
 
 # ### Kalman Gains
 
-# In[60]:
+# In[26]:
 
 fig = plt.figure(figsize=(16,9))
 plt.step(range(len(measurements[0])),Kx, label='$x$')
@@ -513,7 +513,7 @@ plt.ylim([-0.1,0.1]);
 
 # ## State Vector
 
-# In[61]:
+# In[27]:
 
 def plotx():
     fig = plt.figure(figsize=(16,16))
@@ -550,19 +550,19 @@ def plotx():
     plt.savefig('Extended-Kalman-Filter-CTRV-State-Estimates.png', dpi=72, transparent=True, bbox_inches='tight')
 
 
-# In[62]:
+# In[28]:
 
 plotx()
 
 
 # ## Position x/y
 
-# In[63]:
+# In[29]:
 
 #%pylab --no-import-all
 
 
-# In[64]:
+# In[30]:
 
 def plotxy():
 
@@ -592,14 +592,14 @@ def plotxy():
     #plt.savefig('Extended-Kalman-Filter-CTRV-Position.png', dpi=72, transparent=True, bbox_inches='tight')
 
 
-# In[65]:
+# In[31]:
 
 plotxy()
 
 
 # ### Detailed View
 
-# In[66]:
+# In[32]:
 
 def plotxydetails():
     fig = plt.figure(figsize=(12,9))
@@ -643,7 +643,7 @@ def plotxydetails():
     plt.legend(loc='best')
 
 
-# In[67]:
+# In[33]:
 
 plotxydetails()
 
@@ -656,7 +656,7 @@ plotxydetails()
 
 # ### Convert back from Meters to Lat/Lon (WGS84)
 
-# In[68]:
+# In[34]:
 
 latekf = latitude[0] + np.divide(x1,arc)
 lonekf = longitude[0]+ np.divide(x0,np.multiply(arc,np.cos(latitude*np.pi/180.0)))
@@ -667,7 +667,7 @@ lonekf = longitude[0]+ np.divide(x0,np.multiply(arc,np.cos(latitude*np.pi/180.0)
 # Coordinates and timestamps to be used to locate the car model in time and space
 # The value can be expressed as yyyy-mm-ddThh:mm:sszzzzzz, where T is the separator between the date and the time, and the time zone is either Z (for UTC) or zzzzzz, which represents ±hh:mm in relation to UTC.
 
-# In[69]:
+# In[35]:
 
 import datetime
 car={}
@@ -681,12 +681,12 @@ for i in range(len(millis)):
     car["gps"].append((longitude[i], latitude[i], 0))
 
 
-# In[70]:
+# In[36]:
 
 from simplekml import Kml, Model, AltitudeMode, Orientation, Scale, Style, Color
 
 
-# In[71]:
+# In[37]:
 
 # The model path and scale variables
 car_dae = r'https://raw.githubusercontent.com/balzer82/Kalman/master/car-model.dae'
@@ -733,7 +733,7 @@ for m in range(len(latitude)):
 kml.savekmz("Extended-Kalman-Filter-CTRV.kmz")
 
 
-# In[72]:
+# In[38]:
 
 print('Exported KMZ File for Google Earth')
 
@@ -743,8 +743,3 @@ print('Exported KMZ File for Google Earth')
 # `jupyter-nbconvert --to slides Extended-Kalman-Filter-CTRV.ipynb --reveal-prefix=reveal.js --post serve` 
 # 
 # Questions? [@Balzer82](https://twitter.com/balzer82)
-
-# In[ ]:
-
-
-

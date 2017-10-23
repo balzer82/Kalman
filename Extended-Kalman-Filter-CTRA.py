@@ -250,7 +250,7 @@ my = np.cumsum(dy)
 
 ds = np.sqrt(dx**2+dy**2)
 
-GPS=np.hstack((True, (np.diff(ds)>0.0).astype('bool'))) # GPS Trigger for Kalman Filter
+GPS=(ds!=0.0).astype('bool') # GPS Trigger for Kalman Filter
 
 
 # ## Initial State
