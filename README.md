@@ -1,9 +1,14 @@
 Multidimensional Kalman-Filter
 ==============================
+
+#### See [Vimeo](https://vimeo.com/album/2754700/sort:preset/format:detail) for some Explanations. Or if you want to start with the basics, you might want to take a look at these Blogposts: 
+
+* [Das Kalman Filter einfach erklärt (Teil 1)](http://www.cbcity.de/das-kalman-filter-einfach-erklaert-teil-1)
+* [Das Kalman Filter einfach erklärt (Teil 2)](http://www.cbcity.de/das-kalman-filter-einfach-erklaert-teil-2)
+* [Das Extended Kalman Filter einfach erklärt](http://www.cbcity.de/das-extended-kalman-filter-einfach-erklaert)
+
 Some Python Implementations of the Kalman Filter
 ------------------------------
-
-#### See [Vimeo](https://vimeo.com/album/2754700/sort:preset/format:detail) for some Explanations.
 
 ![Kalman Filter Step](https://raw.githubusercontent.com/balzer82/Kalman/master/Kalman-Filter-Step.png)
 
