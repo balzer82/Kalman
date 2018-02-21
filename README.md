@@ -65,6 +65,12 @@ Situation covered: You have an velocity sensor which measures the vehicle speed 
 
 [View IPython Notebook](https://github.com/balzer82/Kalman/blob/master/Extended-Kalman-Filter-CTRV.ipynb?create=1) ~ [See Vimeo](https://vimeo.com/88057157)
 
+### Extended Kalman Filter with Constant Heading and Constant Velocity (CHCV) Model
+
+Situation covered: You have the position (x & y) from a GPS sensor and extimating the heading direction (ψ) and the velocity (v).
+
+[View IPython Notebook](https://github.com/balzer82/Kalman/blob/master/Extended-Kalman-Filter-CHCV.ipynb?create=1)
+
 ### Extended Kalman Filter with Constant Turn Rate and Acceleration (CTRA) Model
 
 Situation covered: You have an acceleration and velocity sensor which measures the vehicle longitudinal acceleration and speed (v) in heading direction (ψ) and a yaw rate sensor (ψ˙) which all have to fused with the position (x & y) from a GPS sensor.
