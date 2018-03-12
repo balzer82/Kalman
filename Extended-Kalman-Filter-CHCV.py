@@ -34,9 +34,9 @@ init_printing(use_latex=True)
 # 
 # Situation covered: You have a position sensor, which measures the vehicle position ($x$ & $y$) and you try to estimate the heading and the velocity.
 
-# Constant Heading, Constant Velocity Model for a vehicle ![CTRV Model](CTRV-Model.png)
+# Constant Heading, Constant Velocity Model
 # 
-# $$x_k= \left[ \matrix{ x^{*} \\ y^{*} \\ \psi \\ v }\right] = \left[ \matrix{ \text{Position X} \\ \text{Position Y} \\ \text{Heading} \\ \text{Velocity} } \right]$$
+# $$ x_k= \begin{bmatrix} x^{*} \\ y^{*} \\ \psi \\ v \end{bmatrix} = \begin{matrix} \text{Position X} \\ \text{Position Y} \\ \text{Heading} \\ \text{Velocity} \end{matrix} $$
 # 
 # $^{*}$=actually measured values in this implementation example!
 
@@ -386,19 +386,23 @@ def plotx():
 
     plt.subplot(312)
     plt.step(range(len(measurements[0])),x2, label='$\psi$')
-    plt.step(range(len(measurements[0])),(course/180.0*np.pi+np.pi)%(2.0*np.pi) - np.pi, label='$\psi$ (from GPS as reference)')
+    plt.step(range(len(measurements[0])),
+             (course/180.0*np.pi+np.pi)%(2.0*np.pi) - np.pi,
+             label='$\psi$ (from GPS as reference)')
     plt.ylabel('Course')
     plt.legend(loc='best',prop={'size':16})
 
     plt.subplot(313)
     plt.step(range(len(measurements[0])),x3, label='$v$')
-    plt.step(range(len(measurements[0])),speed/3.6, label='$v$ (from GPS as reference)')
+    plt.step(range(len(measurements[0])),speed/3.6,
+             label='$v$ (from GPS as reference)')
     plt.ylabel('Velocity')
     #plt.ylim([0, 30])
     plt.legend(loc='best',prop={'size':16})
     plt.xlabel('Filter Step')
 
-    plt.savefig('Extended-Kalman-Filter-CHCV-State-Estimates.png', dpi=72, transparent=True, bbox_inches='tight')
+    plt.savefig('Extended-Kalman-Filter-CHCV-State-Estimates.png',
+                dpi=72, transparent=True, bbox_inches='tight')
 
 
 # In[ ]:
@@ -423,7 +427,8 @@ def plotxy():
     fig = plt.figure(figsize=(16,9))
 
     # EKF State
-    plt.quiver(x0,x1,np.cos(x2), np.sin(x2), color='#94C600', units='xy', width=0.05, scale=0.5)
+    plt.quiver(x0,x1,np.cos(x2), np.sin(x2), color='#94C600',
+               units='xy', width=0.05, scale=0.5)
     plt.plot(x0,x1, label='EKF Position', c='k', lw=5)
 
     # Measurements
@@ -443,7 +448,8 @@ def plotxy():
     plt.axis('equal')
     #plt.tight_layout()
 
-    plt.savefig('Extended-Kalman-Filter-CHCV-Position.png', dpi=72, transparent=True, bbox_inches='tight')
+    plt.savefig('Extended-Kalman-Filter-CHCV-Position.png',
+                dpi=72, transparent=True, bbox_inches='tight')
 
 
 # In[ ]:
