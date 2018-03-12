@@ -1,7 +1,7 @@
 
 # coding: utf-8
 
-# In[ ]:
+# In[1]:
 
 
 import numpy as np
@@ -36,11 +36,11 @@ init_printing(use_latex=True)
 
 # Constant Heading, Constant Velocity Model
 # 
-# $$ x_k= \begin{bmatrix} x^{*} \\ y^{*} \\ \psi \\ v \end{bmatrix} = \begin{matrix} \text{Position X} \\ \text{Position Y} \\ \text{Heading} \\ \text{Velocity} \end{matrix} $$
+# $$ x_k= \begin{bmatrix} x^{*} \\ y^{*} \\ \psi \\ v \end{bmatrix} = \begin{bmatrix} \text{Position X} \\ \text{Position Y} \\ \text{Heading} \\ \text{Velocity} \end{bmatrix} $$
 # 
 # $^{*}$=actually measured values in this implementation example!
 
-# In[ ]:
+# In[2]:
 
 
 numstates=4 # States
@@ -50,7 +50,7 @@ numstates=4 # States
 # 
 # All symbolic calculations are made with [Sympy](http://nbviewer.ipython.org/github/jrjohansson/scientific-python-lectures/blob/master/Lecture-5-Sympy.ipynb). Thanks!
 
-# In[ ]:
+# In[3]:
 
 
 vs, psis, dts, xs, ys, lats, lons = symbols('v \psi T x y lat lon')
@@ -66,7 +66,7 @@ state = Matrix([xs,ys,psis,vs])
 # 
 # This formulas calculate how the state is evolving from one to the next time step
 
-# In[ ]:
+# In[4]:
 
 
 gs
@@ -74,13 +74,13 @@ gs
 
 # ### Calculate the Jacobian of the Dynamic function $g$ with respect to the state vector $x$
 
-# In[ ]:
+# In[5]:
 
 
 state
 
 
-# In[ ]:
+# In[6]:
 
 
 gs.jacobian(state)
@@ -92,7 +92,7 @@ gs.jacobian(state)
 # 
 # Initialized with $0$ means you are pretty sure where the vehicle starts
 
-# In[ ]:
+# In[7]:
 
 
 P = np.eye(numstates)*1000.0
@@ -107,7 +107,7 @@ print(P, P.shape)
 
 # ## Real Measurements
 
-# In[ ]:
+# In[8]:
 
 
 #path = './../RaspberryPi-CarPC/TinkerDataLogger/DataLogs/2014/'
@@ -126,7 +126,7 @@ course =(-course+90.0)
 
 # ### Calculate `dt` for Measurements
 
-# In[ ]:
+# In[9]:
 
 
 dt = np.hstack([0.02, np.diff(millis)])/1000.0 # in s
@@ -138,7 +138,7 @@ dt = np.hstack([0.02, np.diff(millis)])/1000.0 # in s
 # 
 # If a GPS measurement is available, the following function maps the state to the measurement.
 
-# In[ ]:
+# In[10]:
 
 
 hs = Matrix([[xs],
@@ -146,7 +146,7 @@ hs = Matrix([[xs],
 hs
 
 
-# In[ ]:
+# In[11]:
 
 
 JHs=hs.jacobian(state)
@@ -159,7 +159,7 @@ JHs
 # 
 # "In practical use, the uncertainty estimates take on the significance of relative weights of state estimates and measurements. So it is not so much important that uncertainty is absolutely correct as it is that it be relatively consistent across all models" - Kelly, A. (1994). A 3D state space formulation of a navigation Kalman filter for autonomous vehicles, (May). Retrieved from http://oai.dtic.mil/oai/oai?verb=getRecord&metadataPrefix=html&identifier=ADA282853
 
-# In[ ]:
+# In[12]:
 
 
 varGPS = 6.0 # Standard Deviation of GPS Measurement
@@ -170,7 +170,7 @@ print(R, R.shape)
 
 # ## Identity Matrix
 
-# In[ ]:
+# In[13]:
 
 
 I = np.eye(numstates)
@@ -179,7 +179,7 @@ print(I, I.shape)
 
 # ## Approx. Lat/Lon to Meters to check Location
 
-# In[ ]:
+# In[14]:
 
 
 RadiusEarth = 6378388.0 # m
@@ -198,7 +198,7 @@ GPS=(ds!=0.0).astype('bool') # GPS Trigger for Kalman Filter
 
 # ## Initial State
 
-# In[ ]:
+# In[15]:
 
 
 x = np.matrix([[mx[0], my[0], 0.5*np.pi, 0.0]]).T
@@ -207,7 +207,7 @@ print(x, x.shape)
 
 # ### Put everything together as a measurement vector
 
-# In[ ]:
+# In[16]:
 
 
 measurements = np.vstack((mx, my))
@@ -216,7 +216,7 @@ m = measurements.shape[1]
 print(measurements.shape)
 
 
-# In[ ]:
+# In[17]:
 
 
 # Preallocation for Plotting
@@ -246,9 +246,9 @@ def savestates(x, Z, P, K):
 # 
 # ![Extended Kalman Filter Step](Extended-Kalman-Filter-Step.png)
 
-# $$x_k= \begin{bmatrix} x \\ y \\ \psi \\ v \end{bmatrix} = \begin{bmatrix} \text{Position X} \\ \text{Position Y} \\ \text{Heading} \\ \text{Velocity}  \end{bmatrix} =  \underbrace{\begin{matrix}x[0] \\ x[1] \\ x[2] \\ x[3]   \end{matrix}}_{\textrm{Python Nomenclature}}$$
+# $$x_k= \begin{bmatrix} x \\ y \\ \psi \\ v \end{bmatrix} = \begin{bmatrix} \text{Position X} \\ \text{Position Y} \\ \text{Heading} \\ \text{Velocity}  \end{bmatrix} =  \underbrace{\begin{bmatrix}x[0] \\ x[1] \\ x[2] \\ x[3]   \end{bmatrix}}_{\textrm{Python Nomenclature}}$$
 
-# In[ ]:
+# In[18]:
 
 
 for filterstep in range(m):
@@ -314,7 +314,7 @@ for filterstep in range(m):
 
 # ## Lets take a look at the filter performance
 
-# In[ ]:
+# In[19]:
 
 
 def plotP():
@@ -332,13 +332,13 @@ def plotP():
 
 # ### Uncertainties in $P$
 
-# In[ ]:
+# In[20]:
 
 
 plotP()
 
 
-# In[ ]:
+# In[21]:
 
 
 fig = plt.figure(figsize=(6, 6))
@@ -370,7 +370,7 @@ plt.tight_layout()
 
 # ## State Vector
 
-# In[ ]:
+# In[22]:
 
 
 def plotx():
@@ -405,7 +405,7 @@ def plotx():
                 dpi=72, transparent=True, bbox_inches='tight')
 
 
-# In[ ]:
+# In[23]:
 
 
 plotx()
@@ -413,13 +413,13 @@ plotx()
 
 # ## Position x/y
 
-# In[ ]:
+# In[24]:
 
 
 #%pylab --no-import-all
 
 
-# In[ ]:
+# In[25]:
 
 
 def plotxy():
@@ -452,7 +452,7 @@ def plotxy():
                 dpi=72, transparent=True, bbox_inches='tight')
 
 
-# In[ ]:
+# In[26]:
 
 
 plotxy()
@@ -460,7 +460,7 @@ plotxy()
 
 # ### Detailed View
 
-# In[ ]:
+# In[27]:
 
 
 def plotxydetails():
@@ -505,7 +505,7 @@ def plotxydetails():
     plt.legend(loc='best')
 
 
-# In[ ]:
+# In[28]:
 
 
 plotxydetails()
@@ -519,7 +519,7 @@ plotxydetails()
 
 # ### Convert back from Meters to Lat/Lon (WGS84)
 
-# In[ ]:
+# In[29]:
 
 
 latekf = latitude[0] + np.divide(x1,arc)
@@ -531,7 +531,7 @@ lonekf = longitude[0]+ np.divide(x0,np.multiply(arc,np.cos(latitude*np.pi/180.0)
 # Coordinates and timestamps to be used to locate the car model in time and space
 # The value can be expressed as yyyy-mm-ddThh:mm:sszzzzzz, where T is the separator between the date and the time, and the time zone is either Z (for UTC) or zzzzzz, which represents ±hh:mm in relation to UTC.
 
-# In[ ]:
+# In[30]:
 
 
 import datetime
@@ -546,7 +546,7 @@ for i in range(len(millis)):
     car["gps"].append((longitude[i], latitude[i], 0))
 
 
-# In[ ]:
+# In[31]:
 
 
 from simplekml import Kml, Model, AltitudeMode, Orientation, Scale, Style, Color
