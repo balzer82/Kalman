@@ -1,10 +1,11 @@
-
+#!/usr/bin/env python#!/usr/bin/python
 # coding: utf-8
 
 # In[1]:
 
+
 import numpy as np
-get_ipython().magic(u'matplotlib inline')
+
 import matplotlib.pyplot as plt
 from scipy.stats import norm
 
@@ -49,6 +50,7 @@ from scipy.stats import norm
 
 # In[2]:
 
+
 x = np.matrix([[0.0, 0.0, 0.0, 0.0]]).T
 print(x, x.shape)
 #plt.scatter(float(x[0]),float(x[1]), s=100)
@@ -63,11 +65,13 @@ print(x, x.shape)
 
 # In[3]:
 
+
 P = np.diag([1000.0, 1000.0, 1000.0, 1000.0])
 print(P, P.shape)
 
 
 # In[4]:
+
 
 fig = plt.figure(figsize=(6, 6))
 im = plt.imshow(P, interpolation="none", cmap=plt.get_cmap('binary'))
@@ -104,6 +108,7 @@ plt.colorbar(im, cax=cax);
 
 # In[5]:
 
+
 dt = 0.1 # Time Step between Filter Steps
 
 A = np.matrix([[1.0, 0.0, dt, 0.0],
@@ -121,6 +126,7 @@ print(A, A.shape)
 
 # In[6]:
 
+
 H = np.matrix([[0.0, 0.0, 1.0, 0.0],
               [0.0, 0.0, 0.0, 1.0]])
 print(H, H.shape)
@@ -134,6 +140,7 @@ print(H, H.shape)
 
 # In[7]:
 
+
 ra = 10.0**2
 
 R = np.matrix([[ra, 0.0],
@@ -141,59 +148,66 @@ R = np.matrix([[ra, 0.0],
 print(R, R.shape)
 
 
-# In[8]:
-
-# Plot between -10 and 10 with .001 steps.
-xpdf = np.arange(-10, 10, 0.001)
-plt.subplot(121)
-plt.plot(xpdf, norm.pdf(xpdf,0,R[0,0]))
-plt.title('$\dot x$')
-
-plt.subplot(122)
-plt.plot(xpdf, norm.pdf(xpdf,0,R[1,1]))
-plt.title('$\dot y$')
-plt.tight_layout()
-
-
 # ### Process Noise Covariance $Q$
 # 
 # The Position of the car can be influenced by a force (e.g. wind), which leads to an acceleration disturbance (noise). This process noise has to be modeled with the process noise covariance matrix Q.
 # 
-# $$Q = \begin{bmatrix}\sigma_{x}^2 & \sigma_{xy} & \sigma_{x \dot x} & \sigma_{x \dot y} \\ \sigma_{yx} & \sigma_{y}^2 & \sigma_{y \dot x} & \sigma_{y \dot y} \\ \sigma_{\dot x x} & \sigma_{\dot x y} & \sigma_{\dot x}^2 & \sigma_{\dot x \dot y} \\ \sigma_{\dot y x} & \sigma_{\dot y y} & \sigma_{\dot y \dot x} & \sigma_{\dot y}^2 \end{bmatrix}$$
+# $$Q = \begin{bmatrix}
+#     \sigma_{x}^2 & 0 & \sigma_{x \dot x} & 0 \\
+#     0 & \sigma_{y}^2 & 0 & \sigma_{y \dot y} \\
+#     \sigma_{\dot x x} & 0 & \sigma_{\dot x}^2 & 0 \\
+#     0 & \sigma_{\dot y y} & 0 & \sigma_{\dot y}^2 
+#    \end{bmatrix} \cdot \sigma_{a}$$
 # 
-# One can calculate Q as
+# with $\sigma_{a}$ as the magnitude of the standard deviation of the acceleration, which distrubs the car. We do not assume cross correlation, which means if an acceleration will act in x direction of the movement, it will not push in y direction at the same time.
 # 
-# $$Q = G\cdot G^T \cdot \sigma_v^2$$
-# 
-# with $G = \begin{bmatrix}0.5dt^2 & 0.5dt^2 & dt & dt\end{bmatrix}^T$ and $\sigma_v$ as the acceleration process noise, which can be assumed for a vehicle to be $8.8m/s^2$, according to: Schubert, R., Adam, C., Obst, M., Mattern, N., Leonhardt, V., & Wanielik, G. (2011). [Empirical evaluation of vehicular models for ego motion estimation](http://ieeexplore.ieee.org/xpl/articleDetails.jsp?arnumber=5940526). 2011 IEEE Intelligent Vehicles Symposium (IV), 534–539. doi:10.1109/IVS.2011.5940526
+# We can construct the values with the help of a matrix $G$, which is an "actor" to the state vector.
 
-# In[9]:
+# In[79]:
 
-sv = 8.8
-
-G = np.matrix([[0.5*dt**2],
-               [0.5*dt**2],
-               [dt],
-               [dt]])
-
-Q = G*G.T*sv**2
-
-
-# In[10]:
 
 from sympy import Symbol, Matrix
 from sympy.interactive import printing
 printing.init_printing()
-dts = Symbol('dt')
-Qs = Matrix([[0.5*dts**2],[0.5*dts**2],[dts],[dts]])
-Qs*Qs.T
+dts = Symbol('\Delta t')
+
+As = Matrix([[1, 0, dts, 0],
+             [0, 1, 0, dts],
+             [0, 0, 1, 0],
+             [0, 0, 0, 1]])
+# this
+Gs = Matrix([dts**2/2, dts])
 
 
-# In[11]:
+# In[80]:
+
+
+Gs
+
+
+# In[81]:
+
+
+Gs*Gs.T
+
+
+# In[9]:
+
+
+sv = 8.8
+
+Q = np.matrix([[(dt**4)/4, 0, (dt**3)/2, 0],
+               [0, (dt**4)/4, 0, (dt**3)/2],
+               [(dt**3)/2, 0, dt**2, 0],
+               [0, (dt**3)/2, 0, dt**2]]) * sv**2
+
+
+# In[25]:
+
 
 fig = plt.figure(figsize=(6, 6))
 im = plt.imshow(Q, interpolation="none", cmap=plt.get_cmap('binary'))
-plt.title('Process Noise Covariance Matrix $P$')
+plt.title('Process Noise Covariance Matrix $Q$')
 ylocs, ylabels = plt.yticks()
 # set the locations of the yticks
 plt.yticks(np.arange(7))
@@ -219,6 +233,7 @@ plt.colorbar(im, cax=cax);
 
 # In[12]:
 
+
 I = np.eye(4)
 print(I, I.shape)
 
@@ -228,6 +243,7 @@ print(I, I.shape)
 # For example, we are using some random generated measurement values
 
 # In[13]:
+
 
 m = 200 # Measurements
 vx= 20 # in X
@@ -246,6 +262,7 @@ print('You assumed %.2f in R.' % R[0,0])
 
 # In[14]:
 
+
 fig = plt.figure(figsize=(16,5))
 
 plt.step(range(m),mx, label='$\dot x$')
@@ -256,6 +273,7 @@ plt.legend(loc='best',prop={'size':18})
 
 
 # In[15]:
+
 
 # Preallocation for Plotting
 xt = []
@@ -300,6 +318,7 @@ def savestates(x, Z, P, R, K):
 
 # In[16]:
 
+
 for n in range(len(measurements[0])):
  
     # Time Update (Prediction)
@@ -332,15 +351,12 @@ for n in range(len(measurements[0])):
     savestates(x, Z, P, R, K)
 
 
-# Thats it.
-# 
-# ![Job done](http://www.troll.me/images/the-chuck-norris/job-done.jpg)
-
 # # Let's take a look at the filter performance
 
 # ### Kalman Gains $K$
 
 # In[17]:
+
 
 def plot_K():
     fig = plt.figure(figsize=(16,9))
@@ -357,12 +373,14 @@ def plot_K():
 
 # In[18]:
 
+
 plot_K()
 
 
 # ### Uncertainty Matrix $P$
 
 # In[19]:
+
 
 def plot_P():
     fig = plt.figure(figsize=(16,9))
@@ -379,12 +397,14 @@ def plot_P():
 
 # In[20]:
 
+
 plot_P()
 
 
 # ### State Estimate $x$
 
 # In[21]:
+
 
 def plot_x():
     fig = plt.figure(figsize=(16,9))
@@ -403,12 +423,14 @@ def plot_x():
 
 # In[22]:
 
+
 plot_x()
 
 
 # ## Position x/y
 
 # In[23]:
+
 
 def plot_xy():
     fig = plt.figure(figsize=(16,16))
@@ -425,13 +447,12 @@ def plot_xy():
 
 # In[24]:
 
+
 plot_xy()
 
 
 # # Conclusion
 
-# ![Nice](http://www.troll.me/images/stifler-thumbs-up/nice.jpg)
-# 
 # It works pretty well. That was basically just dead reckoning, because no position measurement came in.
 
 # To use this notebook as a presentation type:
@@ -440,7 +461,4 @@ plot_xy()
 # 
 # Questions? [@Balzer82](https://twitter.com/balzer82)
 
-# In[ ]:
-
-
-
+# CC-BY2.0 Paul Balzer
