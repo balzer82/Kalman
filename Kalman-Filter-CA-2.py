@@ -1,10 +1,11 @@
-
+#!/usr/bin/env python#!/usr/bin/python
 # coding: utf-8
 
-# In[1]:
+# In[6]:
+
 
 import numpy as np
-get_ipython().magic(u'matplotlib inline')
+
 import matplotlib.pyplot as plt
 from scipy.stats import norm
 
@@ -47,7 +48,8 @@ from scipy.stats import norm
 
 # #### Initial State
 
-# In[2]:
+# In[7]:
+
 
 x = np.matrix([[0.0, 0.0, 0.0, 0.0, 0.0, 0.0]]).T
 print(x, x.shape)
@@ -58,13 +60,15 @@ n=x.size # States
 
 # #### Initial Uncertainty
 
-# In[3]:
+# In[8]:
+
 
 P = np.diag([100.0, 100.0, 10.0, 10.0, 1.0, 1.0])
 print(P, P.shape)
 
 
-# In[4]:
+# In[9]:
+
 
 fig = plt.figure(figsize=(6, 6))
 im = plt.imshow(P, interpolation="none", cmap=plt.get_cmap('binary'))
@@ -106,7 +110,8 @@ plt.tight_layout()
 # $$\ddot x_{k+1} = \ddot x_{k}$$
 # $$\ddot y_{k+1} = \ddot y_{k}$$
 
-# In[5]:
+# In[10]:
+
 
 dt = 0.1 # Time Step between Filter Steps
 
@@ -123,7 +128,8 @@ print(A, A.shape)
 # 
 # Here you can determine, which of the states is covered by a measurement. In this example, the position ($x$ and $y$) as well as the acceleration is measured ($\ddot x$ and $\ddot y$).
 
-# In[6]:
+# In[11]:
+
 
 H = np.matrix([[1.0, 0.0, 0.0, 0.0, 0.0, 0.0],
                [0.0, 1.0, 0.0, 0.0, 0.0, 0.0],
@@ -134,7 +140,8 @@ print(H, H.shape)
 
 # ## Measurement Noise Covariance $R$
 
-# In[7]:
+# In[12]:
+
 
 ra = 10.0**2   # Noise of Acceleration Measurement
 rp = 100.0**2  # Noise of Position Measurement
@@ -145,7 +152,8 @@ R = np.matrix([[rp, 0.0, 0.0, 0.0],
 print(R, R.shape)
 
 
-# In[8]:
+# In[13]:
+
 
 fig = plt.figure(figsize=(6, 6))
 im = plt.imshow(R, interpolation="none", cmap=plt.get_cmap('binary'))
@@ -173,45 +181,60 @@ plt.colorbar(im, cax=cax)
 plt.tight_layout()
 
 
-# ## Process Noise Covariance Matrix $Q$
-# 
 # The Position of an object can be influenced by a force (e.g. wind), which leads to an acceleration disturbance (noise). This process noise has to be modeled with the process noise covariance matrix Q.
 # 
-# $$Q = \begin{bmatrix}\sigma_{x}^2 & \sigma_{xy} & \sigma_{x \dot x} & \sigma_{x \dot y} & \sigma_{x \ddot x} & \sigma_{x \ddot y} \\ \sigma_{yx} & \sigma_{y}^2 & \sigma_{y \dot x} & \sigma_{y \dot y} & \sigma_{y \ddot x} & \sigma_{y \ddot y} \\ \sigma_{\dot x x} & \sigma_{\dot x y} & \sigma_{\dot x}^2 & \sigma_{\dot x \dot y} & \sigma_{\dot x \ddot x} & \sigma_{\dot x \ddot y} \\ \sigma_{\dot y x} & \sigma_{\dot y y} & \sigma_{\dot y \dot x} & \sigma_{\dot y}^2 & \sigma_{\dot y \ddot x} & \sigma_{\dot y \ddot y} \\ \sigma_{\ddot x x} & \sigma_{\ddot x y} & \sigma_{\ddot x \dot x} & \sigma_{\ddot x \dot y} & \sigma_{\ddot x}^2 & \sigma_{\ddot x \ddot y} \\ \sigma_{\ddot y x} & \sigma_{\ddot y y} & \sigma_{\ddot y \dot x} & \sigma_{\ddot y \dot y} & \sigma_{\ddot y \ddot x} & \sigma_{\ddot y}^2\end{bmatrix}$$
+# $$Q = \begin{bmatrix}
+#     \sigma_{x}^2 & 0 & \sigma_{x \dot x} & 0 & \sigma_{x \ddot x} & 0 \\
+#     0 & \sigma_{y}^2 & 0 & \sigma_{y \dot y} & 0 & \sigma_{y \ddot y} \\
+#     \sigma_{\dot x x} & 0 & \sigma_{\dot x}^2 & 0 & \sigma_{\dot x \ddot x} & 0 \\
+#     0 & \sigma_{\dot y y} & 0 & \sigma_{\dot y}^2 & 0 & \sigma_{\dot y \ddot y} \\
+#     \sigma_{\ddot x x} & 0 & \sigma_{\ddot x \dot x} & 0 & \sigma_{\ddot x}^2 & 0 \\
+#     0 & \sigma_{\ddot y y} & 0 & \sigma_{\ddot y \dot y} & 0 & \sigma_{\ddot y}^2
+#    \end{bmatrix} \cdot \sigma_{j}$$
 # 
-# To easily calcualte Q, one can ask the question: How the noise effects my state vector? For example, how the acceleration change the position over one timestep dt.
+# To easily calcualte Q, one can ask the question: How the noise effects my state vector? For example, how the jerk change the position over one timestep dt. With $\sigma_{j}$ as the magnitude of the standard deviation of the jerk, which distrubs the car. We do not assume cross correlation, which means if a jerk will act in x direction of the movement, it will not push in y direction at the same time.
 # 
-# One can calculate Q as
-# 
-# $$Q = G\cdot G^T \cdot \sigma_a^2$$
-# 
-# with $G = \begin{bmatrix}0.5dt^2 & 0.5dt^2 & dt & dt & 1.0 & 1.0\end{bmatrix}^T$ and $\sigma_a$ as the acceleration process noise.
+# We can construct the values with the help of a matrix $G$, which is an "actor" to the state vector.
 
-# In[9]:
+# In[14]:
+
 
 from sympy import Symbol, Matrix
 from sympy.interactive import printing
-printing.init_printing()
+printing.init_printing(use_latex=True)
 dts = Symbol('\Delta t')
-Qs = Matrix([[0.5*dts**2],[0.5*dts**2],[dts],[dts],[1.0],[1.0]])
-Qs*Qs.T
 
 
-# In[10]:
+# In[15]:
 
-sa = 0.001
-G = np.matrix([[1/2.0*dt**2],
-               [1/2.0*dt**2],
-               [dt],
-               [dt],
-               [1.0],
-               [1.0]])
-Q = G*G.T*sa**2
+
+Gs = Matrix([dts**3/6, dts**2/2, dts])
+Gs
+
+
+# In[16]:
+
+
+Gs*Gs.T
+
+
+# In[17]:
+
+
+sj = 0.1
+
+Q = np.matrix([[(dt**6)/36, 0, (dt**5)/12, 0, (dt**4)/6, 0],
+               [0, (dt**6)/36, 0, (dt**5)/12, 0, (dt**4)/6],
+               [(dt**5)/12, 0, (dt**4)/4, 0, (dt**3)/2, 0],
+               [0, (dt**5)/12, 0, (dt**4)/4, 0, (dt**3)/2],
+               [(dt**4)/6, 0, (dt**3)/2, 0, (dt**2),0],
+               [0, (dt**4)/6, 0, (dt**3)/2, 0, (dt**2)]]) *sj**2
 
 print(Q, Q.shape)
 
 
-# In[11]:
+# In[18]:
+
 
 fig = plt.figure(figsize=(6, 6))
 im = plt.imshow(Q, interpolation="none", cmap=plt.get_cmap('binary'))
@@ -241,7 +264,8 @@ plt.tight_layout()
 
 # ## Identity Matrix $I$
 
-# In[12]:
+# In[19]:
+
 
 I = np.eye(n)
 print(I, I.shape)
@@ -258,7 +282,8 @@ print(I, I.shape)
 
 # ### Positions
 
-# In[13]:
+# In[20]:
+
 
 m = 500 # Measurements
 
@@ -284,7 +309,8 @@ for i in range(1,m):
 
 # ### Accelerations
 
-# In[14]:
+# In[21]:
+
 
 # Acceleration
 sa= 0.1 # Sigma for acceleration
@@ -295,13 +321,15 @@ mx = np.array(ax+sa*np.random.randn(m))
 my = np.array(ay+sa*np.random.randn(m))
 
 
-# In[15]:
+# In[22]:
+
 
 measurements = np.vstack((mpx,mpy,mx,my))
 print(measurements.shape)
 
 
-# In[16]:
+# In[23]:
+
 
 def plot_m():
     fig = plt.figure(figsize=(16,9))
@@ -323,12 +351,14 @@ def plot_m():
     plt.savefig('Kalman-Filter-CA-Measurements.png', dpi=72, transparent=True, bbox_inches='tight')
 
 
-# In[17]:
+# In[24]:
+
 
 plot_m()
 
 
-# In[18]:
+# In[25]:
+
 
 # Preallocation for Plotting
 xt = []
@@ -380,7 +410,8 @@ def savestates(x, Z, P, K):
 # 
 # ![Kalman Filter](https://raw.github.com/balzer82/Kalman/master/Kalman-Filter-Step.png)
 
-# In[19]:
+# In[26]:
+
 
 for filterstep in range(m):
     
@@ -424,7 +455,8 @@ for filterstep in range(m):
 
 # ### Uncertainty $P$
 
-# In[20]:
+# In[27]:
+
 
 def plot_P():
     fig = plt.figure(figsize=(16,9))
@@ -442,14 +474,16 @@ def plot_P():
     plt.legend(loc='best',prop={'size':22})
 
 
-# In[21]:
+# In[28]:
+
 
 plot_P()
 
 
 # ### Covariance Matrix
 
-# In[22]:
+# In[29]:
+
 
 def plot_P2():
     fig = plt.figure(figsize=(6, 6))
@@ -480,14 +514,16 @@ def plot_P2():
     plt.savefig('Kalman-Filter-CA-CovarianceMatrix.png', dpi=72, transparent=True, bbox_inches='tight')
 
 
-# In[23]:
+# In[30]:
+
 
 plot_P2()
 
 
 # ### Kalman Gains
 
-# In[24]:
+# In[31]:
+
 
 def plot_K():
     fig = plt.figure(figsize=(16,9))
@@ -504,14 +540,16 @@ def plot_K():
     plt.legend(loc='best',prop={'size':18})
 
 
-# In[25]:
+# In[32]:
+
 
 plot_K()
 
 
 # ## State Vector
 
-# In[31]:
+# In[33]:
+
 
 def plot_x():
     
@@ -548,14 +586,16 @@ def plot_x():
     plt.savefig('Kalman-Filter-CA-StateEstimated.png', dpi=72, transparent=True, bbox_inches='tight')
 
 
-# In[32]:
+# In[34]:
+
 
 plot_x()
 
 
 # ## Position x/y
 
-# In[28]:
+# In[35]:
+
 
 def plot_xy():
 
@@ -573,7 +613,8 @@ def plot_xy():
     plt.savefig('Kalman-Filter-CA-Position.png', dpi=72, transparent=True, bbox_inches='tight')
 
 
-# In[29]:
+# In[36]:
+
 
 plot_xy()
 
@@ -586,7 +627,8 @@ plot_xy()
 
 # As you can see, good idea to measure the position as well as the acceleration to try to estimate the position.
 
-# In[30]:
+# In[37]:
+
 
 dist=np.cumsum(np.sqrt(np.diff(xt)**2 + np.diff(yt)**2))
 print('Your drifted %dm from origin.' % dist[-1])
@@ -599,6 +641,7 @@ print('Your drifted %dm from origin.' % dist[-1])
 # Questions? [@Balzer82](https://twitter.com/balzer82)
 
 # In[ ]:
+
 
 
 

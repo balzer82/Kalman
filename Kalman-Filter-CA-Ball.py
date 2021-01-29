@@ -1,10 +1,11 @@
-
+#!/usr/bin/env python#!/usr/bin/python
 # coding: utf-8
 
-# In[1]:
+# In[7]:
+
 
 import numpy as np
-get_ipython().magic(u'matplotlib inline')
+
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 from IPython.display import YouTubeVideo
@@ -17,7 +18,8 @@ from scipy.stats import norm
 
 # Situation covered: You have a Position Sensor (e.g. a Vision System) and try to calculate velocity ($\dot x$ and $\dot y$) as well as position ($x$ and $y$) of a ball in 3D space.
 
-# In[2]:
+# In[8]:
+
 
 YouTubeVideo("tIIJME8-au8")
 
@@ -46,7 +48,8 @@ YouTubeVideo("tIIJME8-au8")
 
 # #### Initial Uncertainty
 
-# In[3]:
+# In[9]:
+
 
 P = 100.0*np.eye(9)
 
@@ -82,9 +85,11 @@ plt.tight_layout()
 
 
 
+
 # ## Dynamic Matrix
 
-# In[4]:
+# In[10]:
+
 
 dt = 0.01 # Time Step between Filter Steps
 
@@ -104,7 +109,8 @@ print(A.shape)
 
 # Here you can determine, which of the states is covered by a measurement. In this example, the position ($x$ and $y$) is measured.
 
-# In[5]:
+# In[11]:
+
 
 H = np.matrix([[1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
                [0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
@@ -114,7 +120,8 @@ print(H, H.shape)
 
 # ## Measurement Noise Covariance Matrix $R$
 
-# In[6]:
+# In[12]:
+
 
 rp = 1.0**2  # Noise of Position Measurement
 R = np.matrix([[rp, 0.0, 0.0],
@@ -150,46 +157,56 @@ plt.tight_layout()
 
 # ## Process Noise Covariance Matrix $Q$ for CA Model
 
-# The Position of the ball can be influenced by a force (e.g. wind), which leads to an acceleration disturbance (noise). This process noise has to be modeled with the process noise covariance matrix Q.
+# The Position of an object can be influenced by a force (e.g. wind), which leads to an acceleration disturbance (noise). This process noise has to be modeled with the process noise covariance matrix Q.
 # 
-# To easily calcualte Q, one can ask the question: How the noise effects my state vector? For example, how the acceleration change the position over one timestep dt.
+# To easily calcualte Q, one can ask the question: How the noise effects my state vector? For example, how the jerk change the position over one timestep dt. With $\sigma_{j}$ as the magnitude of the standard deviation of the jerk, which distrubs the ball in 3D space. We do not assume cross correlation, which means if a jerk will act in x direction of the movement, it will not push in y or z direction.
 # 
-# One can calculate Q as
-# 
-# $$Q = G\cdot G^T \cdot \sigma_a^2$$
-# 
-# with $G = \begin{bmatrix}0.5dt^2 & 0.5dt^2 & 0.5dt^2 & dt & dt & dt & 1.0 &1.0 & 1.0\end{bmatrix}^T$ and $\sigma_a$ as the acceleration process noise.
+# We can construct the values with the help of a matrix $G$, which is an "actor" to the state vector.
 
 # #### Symbolic Calculation
 
-# In[7]:
+# In[13]:
+
 
 from sympy import Symbol, Matrix
 from sympy.interactive import printing
 printing.init_printing()
 dts = Symbol('\Delta t')
-Qs = Matrix([[0.5*dts**2],[0.5*dts**2],[0.5*dts**2],[dts],[dts],[dts],[1.0],[1.0],[1.0]])
-Qs*Qs.T
 
 
-# In[8]:
+# In[14]:
 
-sa = 0.1
-G = np.matrix([[1/2.0*dt**2],
-               [1/2.0*dt**2],
-               [1/2.0*dt**2],
-               [dt],
-               [dt],
-               [dt],
-               [1.0],
-               [1.0],
-               [1.0]])
-Q = G*G.T*sa**2
+
+Gs = Matrix([dts**3/6, dts**2/2, dts])
+Gs
+
+
+# In[15]:
+
+
+Gs*Gs.T
+
+
+# In[16]:
+
+
+sj = 0.1
+
+Q = np.matrix([[(dt**6)/36, 0, 0, (dt**5)/12, 0, 0, (dt**4)/6, 0, 0],
+               [0, (dt**6)/36, 0, 0, (dt**5)/12, 0, 0, (dt**4)/6, 0],
+               [0, 0, (dt**6)/36, 0, 0, (dt**5)/12, 0, 0, (dt**4)/6],
+               [(dt**5)/12, 0, 0, (dt**4)/4, 0, 0, (dt**3)/2, 0, 0],
+               [0, (dt**5)/12, 0, 0, (dt**4)/4, 0, 0, (dt**3)/2, 0],
+               [0, 0, (dt**5)/12, 0, 0, (dt**4)/4, 0, 0, (dt**3)/2],
+               [(dt**4)/6, 0, 0, (dt**3)/2, 0, 0, (dt**2), 0, 0],
+               [0, (dt**4)/6, 0, 0, (dt**3)/2, 0, 0, (dt**2), 0],
+               [0, 0, (dt**4)/6, 0, 0, (dt**3)/2, 0, 0, (dt**2)]]) *sj**2
 
 print(Q.shape)
 
 
-# In[9]:
+# In[17]:
+
 
 fig = plt.figure(figsize=(6, 6))
 im = plt.imshow(Q, interpolation="none", cmap=plt.get_cmap('binary'))
@@ -220,7 +237,8 @@ plt.tight_layout()
 
 # ## Disturbance Control Matrix $B$
 
-# In[10]:
+# In[18]:
+
 
 B = np.matrix([[0.0],
                [0.0],
@@ -238,14 +256,16 @@ print(B, B.shape)
 
 # Assumed constant over time
 
-# In[11]:
+# In[19]:
+
 
 u = 0.0
 
 
 # ## Identity Matrix
 
-# In[12]:
+# In[20]:
+
 
 I = np.eye(9)
 print(I, I.shape)
@@ -255,7 +275,8 @@ print(I, I.shape)
 
 # Synthetically creation of the Position Data for the ball
 
-# In[13]:
+# In[21]:
+
 
 Hz = 100.0 # Frequency of Vision System
 dt = 1.0/Hz
@@ -300,7 +321,8 @@ for i in range(int(m)):
 
 # ### Add Noise to the Real Position
 
-# In[14]:
+# In[22]:
+
 
 sp= 0.1 # Sigma for position noise
 
@@ -309,7 +331,8 @@ Ym = Yr + sp * (np.random.randn(m))
 Zm = Zr + sp * (np.random.randn(m))
 
 
-# In[15]:
+# In[23]:
+
 
 fig = plt.figure(figsize=(16,9))
 ax = fig.add_subplot(111, projection='3d')
@@ -332,7 +355,8 @@ ax.set_zlim(mean_z - max_range, mean_z + max_range)
 #plt.savefig('BallTrajectory-Computervision.png', dpi=150, bbox_inches='tight')
 
 
-# In[16]:
+# In[24]:
+
 
 measurements = np.vstack((Xm,Ym,Zm))
 print(measurements.shape)
@@ -340,13 +364,15 @@ print(measurements.shape)
 
 # #### Initial State
 
-# In[17]:
+# In[25]:
+
 
 x = np.matrix([0.0, 0.0, 1.0, 10.0, 0.0, 0.0, 0.0, 0.0, -9.81]).T
 print(x, x.shape)
 
 
-# In[18]:
+# In[26]:
+
 
 # Preallocation for Plotting
 xt = []
@@ -385,7 +411,8 @@ Kddz=[]
 
 # ![Kalman Filter](Kalman-Filter-Step.png)
 
-# In[19]:
+# In[27]:
+
 
 hitplate=False
 for filterstep in range(m):
@@ -460,11 +487,13 @@ for filterstep in range(m):
 
 
 
+
 # # Plots
 
 # ## Estimated State
 
-# In[20]:
+# In[28]:
+
 
 fig = plt.figure(figsize=(16,9))
 plt.subplot(211)
@@ -486,7 +515,8 @@ plt.legend(loc='best',prop={'size':22})
 
 # ### Uncertainty
 
-# In[21]:
+# In[29]:
+
 
 fig = plt.figure(figsize=(16,9))
 plt.subplot(311)
@@ -513,7 +543,8 @@ plt.legend(loc='best',prop={'size':22})
 
 # ### Kalman Gains
 
-# In[22]:
+# In[30]:
+
 
 fig = plt.figure(figsize=(16,9))
 plt.plot(range(len(measurements[0])),Kx, label='Kalman Gain for $x$')
@@ -534,7 +565,8 @@ plt.legend(loc='best',prop={'size':18})
 
 # ### Covariance Matrix
 
-# In[23]:
+# In[31]:
+
 
 fig = plt.figure(figsize=(6, 6))
 im = plt.imshow(P, interpolation="none", cmap=plt.get_cmap('binary'))
@@ -565,7 +597,8 @@ plt.tight_layout()
 
 # ## Position in x/z Plane
 
-# In[24]:
+# In[32]:
+
 
 fig = plt.figure(figsize=(16,9))
 
@@ -584,7 +617,8 @@ plt.savefig('Kalman-Filter-CA-Ball-StateEstimated.png', dpi=150, bbox_inches='ti
 
 # ## Position in 3D
 
-# In[25]:
+# In[33]:
+
 
 fig = plt.figure(figsize=(16,9))
 ax = fig.add_subplot(111, projection='3d')
@@ -609,7 +643,8 @@ plt.savefig('Kalman-Filter-CA-Ball-Trajectory.png', dpi=150, bbox_inches='tight'
 
 # # Conclusion
 
-# In[26]:
+# In[34]:
+
 
 dist = np.sqrt((Xm-xt)**2 + (Ym-yt)**2 + (Zm-zt)**2)
 print('Estimated Position is %.2fm away from ball position.' % dist[-1])
